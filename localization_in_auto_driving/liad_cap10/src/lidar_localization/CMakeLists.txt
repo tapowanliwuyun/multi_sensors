@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 2.8.3)
 project(lidar_localization)
 
 SET(CMAKE_BUILD_TYPE "Release")
-SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
-add_compile_options(-std=c++11)
-add_definitions(-std=c++11)
+#SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+#add_compile_options(-std=c++11)
+#add_definitions(-std=c++11)
+set(CMAKE_CXX_STANDARD 14)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -29,7 +30,7 @@ generate_messages(
    std_msgs
 )
 
-set(ALL_TARGET_LIBRARIES "")
+set(ALL_TARGET_LIBRARIES "" gflags )
 
 include(cmake/glog.cmake)
 include(cmake/YAML.cmake)
@@ -37,7 +38,7 @@ include(cmake/PCL.cmake)
 include(cmake/eigen.cmake)
 include(cmake/geographic.cmake)
 include(cmake/g2o.cmake)
-
+include_directories("/usr/include/suitesparse") 
 include_directories(include ${catkin_INCLUDE_DIRS})
 include(cmake/global_defination.cmake)
 catkin_package()
