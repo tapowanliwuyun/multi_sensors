@@ -86,7 +86,8 @@ bool Viewer::UpdateWithNewKeyFrame(std::deque<KeyFrame>& new_key_frames,
         KeyFrame key_frame;
         for (size_t i = 0; i < new_key_frames.size(); ++i) {
             key_frame = new_key_frames.at(i);
-            key_frame.pose = pose_to_optimize_ * key_frame.pose;
+            //key_frame.pose = pose_to_optimize_ * key_frame.pose;//T =T * Tm_k
+            key_frame.pose = key_frame.pose * pose_to_optimize_;//T =Tm_l * Tl_opl TODO_czy
             all_key_frames_.push_back(key_frame);
         }
         new_key_frames.clear();
@@ -94,7 +95,8 @@ bool Viewer::UpdateWithNewKeyFrame(std::deque<KeyFrame>& new_key_frames,
     }
 
     optimized_odom_ = transformed_data;
-    optimized_odom_.pose = pose_to_optimize_ * optimized_odom_.pose;
+    //optimized_odom_.pose = pose_to_optimize_ * optimized_odom_.pose;//T = T * Tm_l
+    optimized_odom_.pose = optimized_odom_.pose * pose_to_optimize_;//T = Tm_l * Tl_opl TODO_czy
 
     optimized_cloud_ = cloud_data;
     pcl::transformPointCloud(*cloud_data.cloud_ptr, *optimized_cloud_.cloud_ptr, optimized_odom_.pose);
@@ -111,7 +113,8 @@ bool Viewer::OptimizeKeyFrames() {
         } else if (optimized_key_frames_.at(optimized_index).index < all_key_frames_.at(all_index).index) {
             all_index ++;
         } else {
-            pose_to_optimize_ = optimized_key_frames_.at(optimized_index).pose * all_key_frames_.at(all_index).pose.inverse();
+            //pose_to_optimize_ = optimized_key_frames_.at(optimized_index).pose * all_key_frames_.at(all_index).pose.inverse();//T =Tm_opl * Tl_m
+            pose_to_optimize_ = all_key_frames_.at(all_index).pose.inverse() * optimized_key_frames_.at(optimized_index).pose;//Tl_opl =Tl_m * Tm_opl TODO_czy
             all_key_frames_.at(all_index) = optimized_key_frames_.at(optimized_index);
             optimized_index ++;
             all_index ++;
@@ -119,7 +122,8 @@ bool Viewer::OptimizeKeyFrames() {
     }
 
     while (all_index < all_key_frames_.size()) {
-        all_key_frames_.at(all_index).pose = pose_to_optimize_ * all_key_frames_.at(all_index).pose;
+        //all_key_frames_.at(all_index).pose = pose_to_optimize_ * all_key_frames_.at(all_index).pose;
+        all_key_frames_.at(all_index).pose = all_key_frames_.at(all_index).pose * pose_to_optimize_; //TODO_czy
         all_index ++;
     }
 
