@@ -31,8 +31,8 @@ bool G2oGraphOptimizer::Optimize() {
 
     TicToc optimize_time;
     graph_ptr_->initializeOptimization();
-    graph_ptr_->computeInitialGuess();
-    graph_ptr_->computeActiveErrors();
+    graph_ptr_->computeInitialGuess();//通过图的边，从一个设定为 origin 的顶点开始计算各个其他顶点的直。
+    graph_ptr_->computeActiveErrors();//计算激活节点的总误差。
     graph_ptr_->setVerbose(false);
 
     double chi2 = graph_ptr_->chi2();

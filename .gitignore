@@ -3,11 +3,18 @@
 
 # 仅忽略当前路径下的build文件夹及其内所有的文件
 
+#A_LOAM
+*/build/
+*/devel/
+
+#localization_in_auto_driving
 */*/build/
 */*/devel/
+*/*/build_clion/
+*/*/devel_clion/
 */*/*/*/slam_data/
 
-*/*/build/
+
 */*/*/build/
 */*/cmake-build-debug/
 #.gitignore

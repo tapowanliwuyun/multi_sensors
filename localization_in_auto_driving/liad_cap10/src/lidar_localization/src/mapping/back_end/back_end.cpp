@@ -172,7 +172,7 @@ bool BackEnd::AddNodeAndEdge(const PoseData& gnss_data) {
     static KeyFrame last_key_frame = current_key_frame_;
     int node_num = graph_optimizer_ptr_->GetNodeNum();
     if (node_num > 1) {
-        Eigen::Matrix4f relative_pose = last_key_frame.pose.inverse() * current_key_frame_.pose;
+        Eigen::Matrix4f relative_pose = last_key_frame.pose.inverse() * current_key_frame_.pose;//Tlf_cf
         isometry.matrix() = relative_pose.cast<double>();
         graph_optimizer_ptr_->AddSe3Edge(node_num-2, node_num-1, isometry, graph_optimizer_config_.odom_edge_noise);
     }
