@@ -1,0 +1,19 @@
+Log file created at: 2022/09/02 22:20:35
+Running on machine: bupo-vpc
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I0902 22:20:35.687752 10210 matching.cpp:87] load global map size:1645599
+I0902 22:20:35.764976 10210 matching.cpp:90] filtered global map size:1645599
+I0902 22:20:35.824721 10210 matching.cpp:107] new local map:-150,150,-150,150,-150,150
+
+I0902 22:21:17.377164 10210 matching.cpp:107] new local map:-149.319,150.681,-149.447,150.553,-149.209,150.791
+
+I0902 22:21:40.094025 10210 matching.cpp:107] new local map:-48.9669,251.033,-100.4,199.6,-148.926,151.074
+
+I0902 22:21:56.419773 10210 matching.cpp:107] new local map:21.2593,321.259,-0.0823822,299.918,-149.015,150.985
+
+I0902 22:22:22.749114 10210 matching.cpp:107] new local map:-19.3729,280.627,100.684,400.684,-150.044,149.956
+
+I0902 22:22:40.562984 10210 matching.cpp:107] new local map:-38.1674,261.833,200.895,500.895,-149.932,150.068
+
+I0902 22:22:56.509922 10210 matching.cpp:107] new local map:-138.475,161.525,236.088,536.088,-149.802,150.198
+

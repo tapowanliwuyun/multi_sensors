@@ -1,0 +1,6 @@
+Log file created at: 2022/09/02 22:08:40
+Running on machine: bupo-vpc
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I0902 22:08:40.158622  9130 viewer.cpp:182] 地图保存完成，地址是：
+/home/bupo/my_study/multi_sensors/localization_in_auto_driving/liad_cap14/src/lidar_localization/slam_data/map
+
