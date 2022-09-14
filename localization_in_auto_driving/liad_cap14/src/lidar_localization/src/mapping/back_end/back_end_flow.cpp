@@ -117,9 +117,9 @@ bool BackEndFlow::UpdateBackEnd() {
 
     if (!odometry_inited) {
         odometry_inited = true;
-        odom_init_pose = current_gnss_pose_data_.pose * current_laser_odom_data_.pose.inverse();
+        odom_init_pose = current_gnss_pose_data_.pose * current_laser_odom_data_.pose.inverse();//Tm_o = Tm_cl * Tcl_o
     }
-    current_laser_odom_data_.pose = odom_init_pose * current_laser_odom_data_.pose;
+    current_laser_odom_data_.pose = odom_init_pose * current_laser_odom_data_.pose;//
 
     return back_end_ptr_->Update(current_cloud_data_, current_laser_odom_data_, current_gnss_pose_data_);
 }

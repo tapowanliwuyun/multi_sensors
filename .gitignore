@@ -6,6 +6,15 @@
 #A_LOAM
 */build/
 */devel/
+*/build_clion/
+*/devel_clion/
+*/.vscode/
+
+#ku
+
+#loam_velodyne
+*/build/
+*/devel/
 
 #localization_in_auto_driving
 */*/build/
@@ -13,6 +22,7 @@
 */*/build_clion/
 */*/devel_clion/
 */*/*/*/slam_data/
+
 
 
 */*/*/build/
