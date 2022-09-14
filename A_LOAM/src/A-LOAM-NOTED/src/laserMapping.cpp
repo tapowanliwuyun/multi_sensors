@@ -82,7 +82,7 @@ const int laserCloudDepth = 11;
 // cube的总数量，也就是上图中的小格子个总数量 21 * 21 * 11 = 4851
 const int laserCloudNum = laserCloudWidth * laserCloudHeight * laserCloudDepth; //4851
 
-// 下面两个变量是一模一样的，有点冗余，记录submap中的有效cube的index，注意submap中cube的最大数量为 5 * 5 * 5 = 125
+// 下面两个变量是一模一样的， 有点冗余， 记录 submap 中的有效 cube 的 index ，注意 submap 中 cube 的最大数量为 5 * 5 * 5 = 125
 int laserCloudValidInd[125];
 int laserCloudSurroundInd[125];
 
@@ -184,7 +184,7 @@ void pointAssociateTobeMapped(PointType const *const pi, PointType *const po)
 	po->intensity = pi->intensity;
 }
 
-void laserCloudCornerLastHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudCornerLast2)
+void  laserCloudCornerLastHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudCornerLast2)
 {
 	mBuf.lock();
 	cornerLastBuf.push(laserCloudCornerLast2);
@@ -223,8 +223,8 @@ void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr &laserOdometry)
 	t_wodom_curr.y() = laserOdometry->pose.pose.position.y;
 	t_wodom_curr.z() = laserOdometry->pose.pose.position.z;
 
-	// 为了保证LOAM整体的实时性，防止Mapping线程耗时>100ms导致丢帧，用上一次的增量wmap_wodom来更新
-	// Odometry的位姿，旨在用Mapping位姿的初始值（也可以理解为预测值）来实时输出，进而实现LOAM整体的实时性
+	// 为了保证LOAM整体的实时性，防止Mapping线程耗时>100ms导致丢帧，用上一次的增量 wmap_wodom 来更新
+	// Odometry 的位姿，旨在用 Mapping 位姿的初始值（也可以理解为预测值）来实时输出，进而实现LOAM整体的实时性
 	Eigen::Quaterniond q_w_curr = q_wmap_wodom * q_wodom_curr;
 	Eigen::Vector3d t_w_curr = q_wmap_wodom * t_wodom_curr + t_wmap_wodom; 
 
@@ -326,11 +326,11 @@ void process()
 
 			TicToc t_whole;
 
-			// 上一帧的增量wmap_wodom * 本帧Odometry位姿wodom_curr，旨在为本帧Mapping位姿w_curr设置一个初始值
+			// 上一帧的增量 wmap_wodom * 本帧Odometry位姿 wodom_curr ，旨在为本帧Mapping位姿w_curr设置一个初始值
 			transformAssociateToMap();
 
 			TicToc t_shift;
-			// 下面这是计算当前帧位置t_w_curr（在上图中用红色五角星表示的位置）IJK坐标（见上图中的坐标轴），
+			// 下面这是计算当前帧位置 t_w_curr（在上图中用红色五角星表示的位置）IJK坐标（见上图中的坐标轴），
 			// 参照LOAM_NOTED的注释，下面有关25呀，50啥的运算，等效于以50m为单位进行缩放，因为LOAM用1维数组
 			// 进行cube的管理，而数组的index只用是正数，所以要保证IJK坐标都是正数，所以加了laserCloudCenWidth/Heigh/Depth
 			// 的偏移，来使得当前位置尽量位于submap的中心处，也就是使得上图中的五角星位置尽量处于所有格子的中心附近，
@@ -351,7 +351,7 @@ void process()
 			// 注意世界坐标系下的点云地图是固定的，但是IJK坐标系我们是可以移动的，所以这6个while loop
 			// 的作用就是调整IJK坐标系（也就是调整所有cube位置），使得五角星在IJK坐标系的坐标范围处于
 		    // 3 < centerCubeI < 18， 3 < centerCubeJ < 8, 3 < centerCubeK < 18，目的是为了防止后续向
-			// 四周拓展cube（图中的黄色cube就是拓展的cube）时，index（即IJK坐标）成为负数。
+			// 四周拓展 cube （图中的黄色 cube 就是拓展的 cube ）时， index （即IJK坐标）成为负数。
 			while (centerCubeI < 3)
 			{
 				for (int j = 0; j < laserCloudHeight; j++)
@@ -365,7 +365,7 @@ void process()
 							laserCloudSurfArray[i + laserCloudWidth * j + laserCloudWidth * laserCloudHeight * k];
 						for (; i >= 1; i--)// 在I方向上，将cube[I] = cube[I-1],最后一个空出来的cube清空点云，实现IJK坐标系向I轴负方向移动一个cube的
 										   // 效果，从相对运动的角度看，就是图中的五角星在IJK坐标系下向I轴正方向移动了一个cube，如下面的动图所示，所
-				                           // 以centerCubeI最后++，laserCloudCenWidth也会++，为下一帧Mapping时计算五角星的IJK坐标做准备。
+				                           // 以 centerCubeI 最后++， laserCloudCenWidth 也会++，为下一帧Mapping时计算五角星的IJK坐标做准备。
 						{
 							laserCloudCornerArray[i + laserCloudWidth * j + laserCloudWidth * laserCloudHeight * k] =
 								laserCloudCornerArray[i - 1 + laserCloudWidth * j + laserCloudWidth * laserCloudHeight * k];
@@ -569,7 +569,7 @@ void process()
 			laserCloudSurfFromMap->clear();
 			for (int i = 0; i < laserCloudValidNum; i++)
 			{
-				// 将有效index的cube中的点云叠加到一起组成submap的特征点云
+				// 将有效 index 的 cube 中的点云叠加到一起组成 submap 的特征点云
 				*laserCloudCornerFromMap += *laserCloudCornerArray[laserCloudValidInd[i]];
 				*laserCloudSurfFromMap += *laserCloudSurfArray[laserCloudValidInd[i]];
 			}
@@ -616,7 +616,7 @@ void process()
 					{
 						pointOri = laserCloudCornerStack->points[i];
 						// 需要注意的是submap中的点云都是world坐标系，而当前帧的点云都是Lidar坐标系，所以
-						// 在搜寻最近邻点时，先用预测的Mapping位姿w_curr，将Lidar坐标系下的特征点变换到world坐标系下
+						// 在搜寻最近邻点时，先用预测的 Mapping 位姿w_curr，将Lidar坐标系下的特征点变换到world坐标系下
 						pointAssociateToMap(&pointOri, &pointSel);
 						// 在submap的corner特征点（target）中，寻找距离当前帧corner特征点（source）最近的5个点
 						kdtreeCornerFromMap->nearestKSearch(pointSel, 5, pointSearchInd, pointSearchSqDis); 
@@ -873,7 +873,7 @@ void process()
 				pcl::toROSMsg(*laserCloudSurround, laserCloudSurround3);
 				laserCloudSurround3.header.stamp = ros::Time().fromSec(timeLaserOdometry);
 				laserCloudSurround3.header.frame_id = "/camera_init";
-				pubLaserCloudSurround.publish(laserCloudSurround3);
+				pubLaserCloudSurround.publish(laserCloudSurround3); // 发布局部地图
 			}
 
 			if (frameCount % 20 == 0)
@@ -888,7 +888,7 @@ void process()
 				pcl::toROSMsg(laserCloudMap, laserCloudMsg);
 				laserCloudMsg.header.stamp = ros::Time().fromSec(timeLaserOdometry);
 				laserCloudMsg.header.frame_id = "/camera_init";
-				pubLaserCloudMap.publish(laserCloudMsg);
+				pubLaserCloudMap.publish(laserCloudMsg);//发布全局地图
 			}
 
 			int laserCloudFullResNum = laserCloudFullRes->points.size();
@@ -901,7 +901,7 @@ void process()
 			pcl::toROSMsg(*laserCloudFullRes, laserCloudFullRes3);
 			laserCloudFullRes3.header.stamp = ros::Time().fromSec(timeLaserOdometry);
 			laserCloudFullRes3.header.frame_id = "/camera_init";
-			pubLaserCloudFullRes.publish(laserCloudFullRes3);
+			pubLaserCloudFullRes.publish(laserCloudFullRes3);//把点云使用更新后的位姿变换后重新发出去
 
 			printf("mapping pub time %f ms \n", t_pub.toc());
 
@@ -918,7 +918,7 @@ void process()
 			odomAftMapped.pose.pose.position.x = t_w_curr.x();
 			odomAftMapped.pose.pose.position.y = t_w_curr.y();
 			odomAftMapped.pose.pose.position.z = t_w_curr.z();
-			pubOdomAftMapped.publish(odomAftMapped);
+			pubOdomAftMapped.publish(odomAftMapped);//更新后的里程计发出去
 
 			geometry_msgs::PoseStamped laserAfterMappedPose;
 			laserAfterMappedPose.header = odomAftMapped.header;
@@ -926,7 +926,7 @@ void process()
 			laserAfterMappedPath.header.stamp = odomAftMapped.header.stamp;
 			laserAfterMappedPath.header.frame_id = "/camera_init";
 			laserAfterMappedPath.poses.push_back(laserAfterMappedPose);
-			pubLaserAfterMappedPath.publish(laserAfterMappedPath);
+			pubLaserAfterMappedPath.publish(laserAfterMappedPath);//更新后的位姿发出去
 
 			static tf::TransformBroadcaster br;
 			tf::Transform transform;
@@ -939,7 +939,7 @@ void process()
 			q.setY(q_w_curr.y());
 			q.setZ(q_w_curr.z());
 			transform.setRotation(q);
-			br.sendTransform(tf::StampedTransform(transform, odomAftMapped.header.stamp, "/camera_init", "/aft_mapped"));
+			br.sendTransform(tf::StampedTransform(transform, odomAftMapped.header.stamp, "/camera_init", "/aft_mapped"));//tf变换，//camera_init是base，是世界坐标系的id，/aft_mapped是当前点云的坐标，是child
 
 			frameCount++;
 		}
@@ -969,13 +969,13 @@ int main(int argc, char **argv)
 
 	ros::Subscriber subLaserCloudFullRes = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_cloud_3", 100, laserCloudFullResHandler);
 
-	pubLaserCloudSurround = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_surround", 100);
+	pubLaserCloudSurround = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_surround", 100);//将局部地图发布
 
-	pubLaserCloudMap = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_map", 100);
+	pubLaserCloudMap = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_map", 100);//发布全局地图
 
-	pubLaserCloudFullRes = nh.advertise<sensor_msgs::PointCloud2>("/velodyne_cloud_registered", 100);
+	pubLaserCloudFullRes = nh.advertise<sensor_msgs::PointCloud2>("/velodyne_cloud_registered", 100);//发布优化后位姿的点云
 
-	pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/aft_mapped_to_init", 100);
+	pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/aft_mapped_to_init", 100);//发布优化后的位姿，是世界坐标系下当前帧的位姿
 
 	pubOdomAftMappedHighFrec = nh.advertise<nav_msgs::Odometry>("/aft_mapped_to_init_high_frec", 100);
 

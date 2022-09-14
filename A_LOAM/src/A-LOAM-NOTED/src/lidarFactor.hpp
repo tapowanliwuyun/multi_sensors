@@ -19,6 +19,7 @@ struct LidarEdgeFactor
 	template <typename T>
 	bool operator()(const T *q, const T *t, T *residual) const
 	{
+		// 将double数组转成eigen的数据结构，注意这里必须都写成模板
 		Eigen::Matrix<T, 3, 1> cp{T(curr_point.x()), T(curr_point.y()), T(curr_point.z())};
 		Eigen::Matrix<T, 3, 1> lpa{T(last_point_a.x()), T(last_point_a.y()), T(last_point_a.z())};
 		Eigen::Matrix<T, 3, 1> lpb{T(last_point_b.x()), T(last_point_b.y()), T(last_point_b.z())};
@@ -27,6 +28,8 @@ struct LidarEdgeFactor
 		Eigen::Quaternion<T> q_last_curr{q[3], q[0], q[1], q[2]};
 		Eigen::Quaternion<T> q_identity{T(1), T(0), T(0), T(0)};
 		// 考虑运动补偿，ktti点云已经补偿过所以可以忽略下面的对四元数slerp插值以及对平移的线性插值
+		// 计算的是上一帧到当前帧的位姿变换，因此根据匀速模型，计算该点对应的位姿
+		// 这里暂时不考虑畸变，因此这里不做任何变换
 		q_last_curr = q_identity.slerp(T(s), q_last_curr);
 		Eigen::Matrix<T, 3, 1> t_last_curr{T(s) * t[0], T(s) * t[1], T(s) * t[2]};
 
