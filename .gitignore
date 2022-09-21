@@ -16,6 +16,10 @@
 */build/
 */devel/
 
+#LeGO_LOAM
+*/build/
+*/devel/
+
 #localization_in_auto_driving
 */*/build/
 */*/devel/
