@@ -186,12 +186,16 @@ public:
     FeatureAssociation():
         nh("~")
         {
-
+         // 订阅了分割之后的点云
         subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/segmented_cloud", 1, &FeatureAssociation::laserCloudHandler, this);
+         // 订阅的分割点云含有图像的深度信息
         subLaserCloudInfo = nh.subscribe<cloud_msgs::cloud_info>("/segmented_cloud_info", 1, &FeatureAssociation::laserCloudInfoHandler, this);
+        // 非聚类的点
         subOutlierCloud = nh.subscribe<sensor_msgs::PointCloud2>("/outlier_cloud", 1, &FeatureAssociation::outlierCloudHandler, this);
+        // IMU传感器的消息
         subImu = nh.subscribe<sensor_msgs::Imu>(imuTopic, 50, &FeatureAssociation::imuHandler, this);
 
+        // 发布面特征点 和 边特征点
         pubCornerPointsSharp = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_sharp", 1);
         pubCornerPointsLessSharp = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_less_sharp", 1);
         pubSurfPointsFlat = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_flat", 1);
@@ -326,10 +330,11 @@ public:
 
     void ShiftToStartIMU(float pointTime)
     {
-        imuShiftFromStartXCur = imuShiftXCur - imuShiftXStart - imuVeloXStart * pointTime;
-        imuShiftFromStartYCur = imuShiftYCur - imuShiftYStart - imuVeloYStart * pointTime;
-        imuShiftFromStartZCur = imuShiftZCur - imuShiftZStart - imuVeloZStart * pointTime;
-
+          // 得到非匀速运动下的激光位置偏移量。 Startposition + PositionShift + 匀速模型(开始点对应的速度) = Curposition
+        imuShiftFromStartXCur = imuShiftXCur - imuShiftXStart;// - imuVeloXStart * pointTime; czy
+        imuShiftFromStartYCur = imuShiftYCur - imuShiftYStart; //- imuVeloYStart * pointTime; czy
+        imuShiftFromStartZCur = imuShiftZCur - imuShiftZStart; //- imuVeloZStart * pointTime; czy
+        //将IMU速度差值 从地理坐标系下，变换到 当前帧第一个点的 车辆坐标系下
         float x1 = cosImuYawStart * imuShiftFromStartXCur - sinImuYawStart * imuShiftFromStartZCur;
         float y1 = imuShiftFromStartYCur;
         float z1 = sinImuYawStart * imuShiftFromStartXCur + cosImuYawStart * imuShiftFromStartZCur;
@@ -345,10 +350,11 @@ public:
 
     void VeloToStartIMU()
     {
+        //计算当前激光点到第一个激光点时的IMU速度差值
         imuVeloFromStartXCur = imuVeloXCur - imuVeloXStart;
         imuVeloFromStartYCur = imuVeloYCur - imuVeloYStart;
         imuVeloFromStartZCur = imuVeloZCur - imuVeloZStart;
-
+        //将IMU速度差值 从地理坐标系下，变换到 当前帧第一个点的 车辆坐标系下
         float x1 = cosImuYawStart * imuVeloFromStartXCur - sinImuYawStart * imuVeloFromStartZCur;
         float y1 = imuVeloFromStartYCur;
         float z1 = sinImuYawStart * imuVeloFromStartXCur + cosImuYawStart * imuVeloFromStartZCur;
@@ -364,6 +370,7 @@ public:
 
     void TransformToStartIMU(PointType *p)
     {
+        //将当前点 从当前帧的当前点的车辆坐标系下 变换到 地理坐标系（全局坐标系），反向变换
         float x1 = cos(imuRollCur) * p->x - sin(imuRollCur) * p->y;
         float y1 = sin(imuRollCur) * p->x + cos(imuRollCur) * p->y;
         float z1 = p->z;
@@ -375,7 +382,7 @@ public:
         float x3 = cos(imuYawCur) * x2 + sin(imuYawCur) * z2;
         float y3 = y2;
         float z3 = -sin(imuYawCur) * x2 + cos(imuYawCur) * z2;
-
+        //将当前点 从地理坐标系下 变换到 第一个激光点时的IMU下
         float x4 = cosImuYawStart * x3 - sinImuYawStart * z3;
         float y4 = y3;
         float z4 = sinImuYawStart * x3 + cosImuYawStart * z3;
@@ -383,10 +390,11 @@ public:
         float x5 = x4;
         float y5 = cosImuPitchStart * y4 + sinImuPitchStart * z4;
         float z5 = -sinImuPitchStart * y4 + cosImuPitchStart * z4;
-
-        p->x = cosImuRollStart * x5 + sinImuRollStart * y5 + imuShiftFromStartXCur;
-        p->y = -sinImuRollStart * x5 + cosImuRollStart * y5 + imuShiftFromStartYCur;
-        p->z = z5 + imuShiftFromStartZCur;
+  // 加上位置偏移量，这里 加 是因为激光运动和点云运动是相反的。
+  // 可以考虑加速运动下，PositionShift（imuShiftFromStartXCur）为正，并且点云测量坐标系变小，因此需要让点云坐标变大。
+        p->x = cosImuRollStart * x5 + sinImuRollStart * y5 + imuShiftFromStartXCur;//czy
+        p->y = -sinImuRollStart * x5 + cosImuRollStart * y5 + imuShiftFromStartYCur;//czy
+        p->z = z5 + imuShiftFromStartZCur;//czy
     }
 
     void AccumulateIMUShiftAndRotation()
@@ -398,6 +406,7 @@ public:
         float accY = imuAccY[imuPointerLast];
         float accZ = imuAccZ[imuPointerLast];
 
+        //参考：https://zhuanlan.zhihu.com/p/242559124，将加速度从车辆坐标系变换到地理坐标系（g所在的坐标系）
         float x1 = cos(roll) * accX - sin(roll) * accY;
         float y1 = sin(roll) * accX + cos(roll) * accY;
         float z1 = accZ;
@@ -412,16 +421,16 @@ public:
 
         int imuPointerBack = (imuPointerLast + imuQueLength - 1) % imuQueLength;
         double timeDiff = imuTime[imuPointerLast] - imuTime[imuPointerBack];
-        if (timeDiff < scanPeriod) {
-
+        if (timeDiff < scanPeriod) { //scanPeriod = 0.1;
+            //求得是在地理坐标系下的位移
             imuShiftX[imuPointerLast] = imuShiftX[imuPointerBack] + imuVeloX[imuPointerBack] * timeDiff + accX * timeDiff * timeDiff / 2;
             imuShiftY[imuPointerLast] = imuShiftY[imuPointerBack] + imuVeloY[imuPointerBack] * timeDiff + accY * timeDiff * timeDiff / 2;
             imuShiftZ[imuPointerLast] = imuShiftZ[imuPointerBack] + imuVeloZ[imuPointerBack] * timeDiff + accZ * timeDiff * timeDiff / 2;
-
+            //求 地理坐标系下的 速度
             imuVeloX[imuPointerLast] = imuVeloX[imuPointerBack] + accX * timeDiff;
             imuVeloY[imuPointerLast] = imuVeloY[imuPointerBack] + accY * timeDiff;
             imuVeloZ[imuPointerLast] = imuVeloZ[imuPointerBack] + accZ * timeDiff;
-
+            //求的是 IMU坐标系下的角度
             imuAngularRotationX[imuPointerLast] = imuAngularRotationX[imuPointerBack] + imuAngularVeloX[imuPointerBack] * timeDiff;
             imuAngularRotationY[imuPointerLast] = imuAngularRotationY[imuPointerBack] + imuAngularVeloY[imuPointerBack] * timeDiff;
             imuAngularRotationZ[imuPointerLast] = imuAngularRotationZ[imuPointerBack] + imuAngularVeloZ[imuPointerBack] * timeDiff;
@@ -433,13 +442,15 @@ public:
         double roll, pitch, yaw;
         tf::Quaternion orientation;
         tf::quaternionMsgToTF(imuIn->orientation, orientation);
-        tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
+        tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);//得到IMU读数下的翻滚角、俯仰角、偏航角
 
+        //计算去除重力矢量后的 IMU 在车辆坐标系下的读数，参考：https://zhuanlan.zhihu.com/p/242559124
         float accX = imuIn->linear_acceleration.y - sin(roll) * cos(pitch) * 9.81;
         float accY = imuIn->linear_acceleration.z - cos(roll) * cos(pitch) * 9.81;
-        float accZ = imuIn->linear_acceleration.x + sin(pitch) * 9.81;
+        float accZ = imuIn->linear_acceleration.x + sin(pitch) * 9.81;                                                                                                                                                                       
 
-        imuPointerLast = (imuPointerLast + 1) % imuQueLength;
+        //保证最多只会存储200个IMU数据作为缓存
+        imuPointerLast = (imuPointerLast + 1) % imuQueLength;//imuQueLength = 200;
 
         imuTime[imuPointerLast] = imuIn->header.stamp.toSec();
 
@@ -462,7 +473,7 @@ public:
 
         cloudHeader = laserCloudMsg->header;
 
-        timeScanCur = cloudHeader.stamp.toSec();
+        timeScanCur = cloudHeader.stamp.toSec();//获取当前 segment_cloud 的时间戳
         timeNewSegmentedCloud = timeScanCur;
 
         segmentedCloud->clear();
@@ -488,6 +499,7 @@ public:
         newSegmentedCloudInfo = true;
     }
 
+    // //1.1 去除运动畸变
     void adjustDistortion()
     {
         bool halfPassed = false;
@@ -496,16 +508,23 @@ public:
         PointType point;
 
         for (int i = 0; i < cloudSize; i++) {
-
+            // 这里xyz与laboshin_loam代码中的一样经过坐标轴变换
+            // imuhandler() 中相同的坐标变换
             point.x = segmentedCloud->points[i].y;
             point.y = segmentedCloud->points[i].z;
             point.z = segmentedCloud->points[i].x;
-
+            // -atan2(p.x,p.z)==>-atan2(y,x)
+            // ori表示的是偏航角yaw，因为前面有负号，ori=[-M_PI,M_PI)
+            // 因为segInfo.orientationDiff表示的范围是(PI,3PI)，在2PI附近
+            // 下面过程的主要作用是调整ori大小，满足start<ori<end
             float ori = -atan2(point.x, point.z);
             if (!halfPassed) {
                 if (ori < segInfo.startOrientation - M_PI / 2)
+                	// start-ori>M_PI/2，说明ori小于start，不合理，
+					// 正常情况在前半圈的话，ori-stat范围[0,M_PI]
                     ori += 2 * M_PI;
                 else if (ori > segInfo.startOrientation + M_PI * 3 / 2)
+                    // ori-start>3/2*M_PI,说明ori太大，不合理
                     ori -= 2 * M_PI;
 
                 if (ori - segInfo.startOrientation > M_PI)
@@ -514,25 +533,31 @@ public:
                 ori += 2 * M_PI;
 
                 if (ori < segInfo.endOrientation - M_PI * 3 / 2)
+                // end-ori>3/2*PI,ori太小
                     ori += 2 * M_PI;
                 else if (ori > segInfo.endOrientation + M_PI / 2)
+                // ori-end>M_PI/2,太大
                     ori -= 2 * M_PI;
             }
-
+            // 用 point.intensity 来保存时间
             float relTime = (ori - segInfo.startOrientation) / segInfo.orientationDiff;
             point.intensity = int(segmentedCloud->points[i].intensity) + scanPeriod * relTime;
 
             if (imuPointerLast >= 0) {
-                float pointTime = relTime * scanPeriod;
+                float pointTime = relTime * scanPeriod;//scanPeriod = 0.1;一般激光雷达是10hz
                 imuPointerFront = imuPointerLastIteration;
-                while (imuPointerFront != imuPointerLast) {
-                    if (timeScanCur + pointTime < imuTime[imuPointerFront]) {
+                // while循环内进行时间轴对齐
+                while (imuPointerFront != imuPointerLast) { // 直到 imu 数据读到当前imu数据的上一个数据
+                    if (timeScanCur + pointTime < imuTime[imuPointerFront]) { //  寻找IMU数据，IMU数据时间戳大于当前激光点的时间，如果一直都没有，则把最后一个IMU数据作为最新的IMU数据
                         break;
                     }
                     imuPointerFront = (imuPointerFront + 1) % imuQueLength;
                 }
 
-                if (timeScanCur + pointTime > imuTime[imuPointerFront]) {
+                if (timeScanCur + pointTime > imuTime[imuPointerFront]) {//在上面没有找到 IMU 数据时间戳大于当前激光点的时间的 IMU 数据，则把最后一个 IMU 数据作为最新的 IMU 数据
+                    // 该条件内imu数据比激光数据早，但是没有更后面的数据
+                    // (打个比方,激光在9点时出现，imu现在只有8点的)
+                    // 这种情况上面while循环是以imuPointerFront == imuPointerLast结束的
                     imuRollCur = imuRoll[imuPointerFront];
                     imuPitchCur = imuPitch[imuPointerFront];
                     imuYawCur = imuYaw[imuPointerFront];
@@ -544,15 +569,20 @@ public:
                     imuShiftXCur = imuShiftX[imuPointerFront];
                     imuShiftYCur = imuShiftY[imuPointerFront];
                     imuShiftZCur = imuShiftZ[imuPointerFront];   
-                } else {
+                } else {//在上面找到 IMU 数据时间戳大于当前激光点的时间的 IMU 数据，则进行插值计算
+                    // 在imu数据充足的情况下可以进行插补
+                    // 当前timeScanCur + pointTime < imuTime[imuPointerFront]，
+                    // 而且imuPointerFront是最早一个时间大于timeScanCur + pointTime的imu数据指针
                     int imuPointerBack = (imuPointerFront + imuQueLength - 1) % imuQueLength;
                     float ratioFront = (timeScanCur + pointTime - imuTime[imuPointerBack]) 
                                                      / (imuTime[imuPointerFront] - imuTime[imuPointerBack]);
                     float ratioBack = (imuTime[imuPointerFront] - timeScanCur - pointTime) 
                                                     / (imuTime[imuPointerFront] - imuTime[imuPointerBack]);
-
-                    imuRollCur = imuRoll[imuPointerFront] * ratioFront + imuRoll[imuPointerBack] * ratioBack;
-                    imuPitchCur = imuPitch[imuPointerFront] * ratioFront + imuPitch[imuPointerBack] * ratioBack;
+                    // 通过上面计算的ratioFront以及ratioBack进行插补
+                    // 因为imuRollCur和imuPitchCur通常都在0度左右，变化不会很大，因此不需要考虑超过2M_PI的情况
+                    // imuYaw转的角度比较大，需要考虑超过2 * M_PI的情况，由于一般相邻IMU不会出现180度的变化，一旦出现，说明需要进行角度的变换
+                    imuRollCur = imuRoll[imuPointerFront] * ratioFront + imuRoll[imuPointerBack] * ratioBack;//翻滚角不会转动180度以上
+                    imuPitchCur = imuPitch[imuPointerFront] * ratioFront + imuPitch[imuPointerBack] * ratioBack;//俯仰角也不会转动180度以上
                     if (imuYaw[imuPointerFront] - imuYaw[imuPointerBack] > M_PI) {
                         imuYawCur = imuYaw[imuPointerFront] * ratioFront + (imuYaw[imuPointerBack] + 2 * M_PI) * ratioBack;
                     } else if (imuYaw[imuPointerFront] - imuYaw[imuPointerBack] < -M_PI) {
@@ -560,18 +590,20 @@ public:
                     } else {
                         imuYawCur = imuYaw[imuPointerFront] * ratioFront + imuYaw[imuPointerBack] * ratioBack;
                     }
-
+                    // IMU速度插补
                     imuVeloXCur = imuVeloX[imuPointerFront] * ratioFront + imuVeloX[imuPointerBack] * ratioBack;
                     imuVeloYCur = imuVeloY[imuPointerFront] * ratioFront + imuVeloY[imuPointerBack] * ratioBack;
                     imuVeloZCur = imuVeloZ[imuPointerFront] * ratioFront + imuVeloZ[imuPointerBack] * ratioBack;
-
+                    //IMU位移插补
                     imuShiftXCur = imuShiftX[imuPointerFront] * ratioFront + imuShiftX[imuPointerBack] * ratioBack;
                     imuShiftYCur = imuShiftY[imuPointerFront] * ratioFront + imuShiftY[imuPointerBack] * ratioBack;
                     imuShiftZCur = imuShiftZ[imuPointerFront] * ratioFront + imuShiftZ[imuPointerBack] * ratioBack;
                 }
 
-                if (i == 0) {
-                    imuRollStart = imuRollCur;
+                if (i == 0) {//如果是第一个激光点
+                    // 此处更新过的角度值主要用在 updateImuRollPitchYawStartSinCos() 中,
+                    // 更新每个角的正余弦值
+                    imuRollStart = imuRollCur;//第一个激光点时的IMU角度读数
                     imuPitchStart = imuPitchCur;
                     imuYawStart = imuYawCur;
 
@@ -584,31 +616,36 @@ public:
                     imuShiftZStart = imuShiftZCur;
 
                     if (timeScanCur + pointTime > imuTime[imuPointerFront]) {
+                        // 该条件内imu数据比激光数据早，但是没有更后面的数据
                         imuAngularRotationXCur = imuAngularRotationX[imuPointerFront];
                         imuAngularRotationYCur = imuAngularRotationY[imuPointerFront];
                         imuAngularRotationZCur = imuAngularRotationZ[imuPointerFront];
                     }else{
+                        // 在imu数据充足的情况下可以进行插补
                         int imuPointerBack = (imuPointerFront + imuQueLength - 1) % imuQueLength;
                         float ratioFront = (timeScanCur + pointTime - imuTime[imuPointerBack]) 
                                                          / (imuTime[imuPointerFront] - imuTime[imuPointerBack]);
                         float ratioBack = (imuTime[imuPointerFront] - timeScanCur - pointTime) 
                                                         / (imuTime[imuPointerFront] - imuTime[imuPointerBack]);
-                        imuAngularRotationXCur = imuAngularRotationX[imuPointerFront] * ratioFront + imuAngularRotationX[imuPointerBack] * ratioBack;
+                        imuAngularRotationXCur = imuAngularRotationX[imuPointerFront] * ratioFront + imuAngularRotationX[imuPointerBack] * ratioBack;//计算的是当前帧一个点的IMU读数
                         imuAngularRotationYCur = imuAngularRotationY[imuPointerFront] * ratioFront + imuAngularRotationY[imuPointerBack] * ratioBack;
                         imuAngularRotationZCur = imuAngularRotationZ[imuPointerFront] * ratioFront + imuAngularRotationZ[imuPointerBack] * ratioBack;
                     }
-
-                    imuAngularFromStartX = imuAngularRotationXCur - imuAngularRotationXLast;
+                    // 距离上一次插补，旋转过的角度变化值
+                    imuAngularFromStartX = imuAngularRotationXCur - imuAngularRotationXLast;//计算的是当前帧第一个点的IMU读数与上一帧第一个点的IMU读数之差
                     imuAngularFromStartY = imuAngularRotationYCur - imuAngularRotationYLast;
                     imuAngularFromStartZ = imuAngularRotationZCur - imuAngularRotationZLast;
 
                     imuAngularRotationXLast = imuAngularRotationXCur;
                     imuAngularRotationYLast = imuAngularRotationYCur;
                     imuAngularRotationZLast = imuAngularRotationZCur;
-
-                    updateImuRollPitchYawStartSinCos();
+                    // 这里更新的是i=0时刻的rpy角，后面将速度坐标投影过来会用到i=0时刻的值
+                    updateImuRollPitchYawStartSinCos();//提前计算好i第一个激光点角度读数的cos和sin值
                 } else {
+                    // 速度投影到初始i=0时刻
+                    ShiftToStartIMU(relTime);//czy
                     VeloToStartIMU();
+                    // 将点的坐标变换到初始i=0时刻
                     TransformToStartIMU(&point);
                 }
             }
@@ -617,7 +654,9 @@ public:
 
         imuPointerLastIteration = imuPointerLast;
     }
-
+    //1.2 计算曲率
+        // 计算光滑性，这里的计算没有完全按照公式进行，
+    // 缺少除以总点数i和r[i]
     void calculateSmoothness()
     {
         int cloudSize = segmentedCloud->points.size();
@@ -630,16 +669,21 @@ public:
                             + segInfo.segmentedCloudRange[i+3] + segInfo.segmentedCloudRange[i+4]
                             + segInfo.segmentedCloudRange[i+5];            
 
-            cloudCurvature[i] = diffRange*diffRange;
-
+            cloudCurvature[i] = diffRange*diffRange;//将曲率的平方放入
+            // 在markOccludedPoints()函数中对该参数进行重新修改
             cloudNeighborPicked[i] = 0;
+			// 在extractFeatures()函数中会对标签进行修改，
+			// 初始化为0，surfPointsFlat标记为-1，surfPointsLessFlatScan为不大于0的标签
+			// cornerPointsSharp标记为2，cornerPointsLessSharp标记为1
             cloudLabel[i] = 0;
 
             cloudSmoothness[i].value = cloudCurvature[i];
             cloudSmoothness[i].ind = i;
         }
     }
-
+    //1.3 标记出远点和离散点
+        // 阻塞点（远点）是哪种点?
+    // 阻塞点指点云之间相互遮挡，而且又靠得很近的点
     void markOccludedPoints()
     {
         int cloudSize = segmentedCloud->points.size();
@@ -651,7 +695,8 @@ public:
             int columnDiff = std::abs(int(segInfo.segmentedCloudColInd[i+1] - segInfo.segmentedCloudColInd[i]));
 
             if (columnDiff < 10){
-
+                // 如果当前点和周围点的距离过大 就标记为 1
+                //此处是将遮挡点标记为已经选中点
                 if (depth1 - depth2 > 0.3){
                     cloudNeighborPicked[i - 5] = 1;
                     cloudNeighborPicked[i - 4] = 1;
@@ -671,14 +716,15 @@ public:
 
             float diff1 = std::abs(float(segInfo.segmentedCloudRange[i-1] - segInfo.segmentedCloudRange[i]));
             float diff2 = std::abs(float(segInfo.segmentedCloudRange[i+1] - segInfo.segmentedCloudRange[i]));
-
+            // 如果一个点突变很远，则也被标记成 1 ，此处是将该点视为噪声，将其标记为选中点
             if (diff1 > 0.02 * segInfo.segmentedCloudRange[i] && diff2 > 0.02 * segInfo.segmentedCloudRange[i])
                 cloudNeighborPicked[i] = 1;
         }
     }
-
+    //1.4 特征提取
     void extractFeatures()
     {
+        // 初始化对应的指针
         cornerPointsSharp->clear();
         cornerPointsLessSharp->clear();
         surfPointsFlat->clear();
@@ -687,36 +733,42 @@ public:
         for (int i = 0; i < N_SCAN; i++) {
 
             surfPointsLessFlatScan->clear();
-
+            // 将一帧激光图像分成 6个子图 提取的特征点相对均匀
             for (int j = 0; j < 6; j++) {
 
-                int sp = (segInfo.startRingIndex[i] * (6 - j)    + segInfo.endRingIndex[i] * j) / 6;
-                int ep = (segInfo.startRingIndex[i] * (5 - j)    + segInfo.endRingIndex[i] * (j + 1)) / 6 - 1;
+                int sp = (segInfo.startRingIndex[i] * (6 - j)    + segInfo.endRingIndex[i] * j) / 6;// 为 j*(start-end)/6 + start
+                int ep = (segInfo.startRingIndex[i] * (5 - j)    + segInfo.endRingIndex[i] * (j + 1)) / 6 - 1;// 为 (j+1)*(start-end)/6 + start
 
                 if (sp >= ep)
                     continue;
-
+                // 按照曲率的大小排序
+                // 按照cloudSmoothness.value从小到大排序
                 std::sort(cloudSmoothness.begin()+sp, cloudSmoothness.begin()+ep, by_value());
 
+                // 从1/6点云帧中选出 2个shape edge、20个less shape edge
                 int largestPickedNum = 0;
                 for (int k = ep; k >= sp; k--) {
                     int ind = cloudSmoothness[k].ind;
-                    if (cloudNeighborPicked[ind] == 0 &&
-                        cloudCurvature[ind] > edgeThreshold &&
-                        segInfo.segmentedCloudGroundFlag[ind] == false) {
+                    if (cloudNeighborPicked[ind] == 0 &&//该点没有被选过
+                        cloudCurvature[ind] > edgeThreshold && //该点的曲率大于所设定的边点的阈值  edgeThreshold = 0.1;
+                        segInfo.segmentedCloudGroundFlag[ind] == false) {// 该点不是地面点
                     
                         largestPickedNum++;
+                        // 挑选出曲率最大的点 
                         if (largestPickedNum <= 2) {
-                            cloudLabel[ind] = 2;
+                            cloudLabel[ind] = 2;// shape edge
                             cornerPointsSharp->push_back(segmentedCloud->points[ind]);
                             cornerPointsLessSharp->push_back(segmentedCloud->points[ind]);
+                        // 把剩下的 20 个备选的边特征点选取出来
                         } else if (largestPickedNum <= 20) {
-                            cloudLabel[ind] = 1;
+                            cloudLabel[ind] = 1; // less shape edge
                             cornerPointsLessSharp->push_back(segmentedCloud->points[ind]);
                         } else {
                             break;
                         }
 
+                        //检查该点附近是否有遮挡点
+                        // 将已经选取的边特征点标记，这些点不会被纳入特征点的选取
                         cloudNeighborPicked[ind] = 1;
                         for (int l = 1; l <= 5; l++) {
                             int columnDiff = std::abs(int(segInfo.segmentedCloudColInd[ind + l] - segInfo.segmentedCloudColInd[ind + l - 1]));
@@ -733,22 +785,26 @@ public:
                     }
                 }
 
+                // 从1/6点云帧中选出 4个shape edge、n个less shape edge
                 int smallestPickedNum = 0;
+                 // 面特征点的选取 在已经标记过的地面点中选取
                 for (int k = sp; k <= ep; k++) {
                     int ind = cloudSmoothness[k].ind;
-                    if (cloudNeighborPicked[ind] == 0 &&
-                        cloudCurvature[ind] < surfThreshold &&
-                        segInfo.segmentedCloudGroundFlag[ind] == true) {
+                    if (cloudNeighborPicked[ind] == 0 &&//该点没有被选过
+                        cloudCurvature[ind] < surfThreshold && //该点的曲率小于所设定的面点的阈值 surfThreshold = 0.1;;
+                        segInfo.segmentedCloudGroundFlag[ind] == true) { //该点必须是地面点
 
-                        cloudLabel[ind] = -1;
+                        cloudLabel[ind] = -1; // surf 
                         surfPointsFlat->push_back(segmentedCloud->points[ind]);
 
                         smallestPickedNum++;
+                        // 选取超过4个之后 跳出 只选4个点
                         if (smallestPickedNum >= 4) {
                             break;
                         }
-
+                        // 标价出边缘点来
                         cloudNeighborPicked[ind] = 1;
+                        //检查该点附近是否有遮挡点
                         for (int l = 1; l <= 5; l++) {
 
                             int columnDiff = std::abs(int(segInfo.segmentedCloudColInd[ind + l] - segInfo.segmentedCloudColInd[ind + l - 1]));
@@ -767,14 +823,16 @@ public:
                         }
                     }
                 }
-
+                // 剩余的特征点全部为 less surf points
                 for (int k = sp; k <= ep; k++) {
                     if (cloudLabel[k] <= 0) {
                         surfPointsLessFlatScan->push_back(segmentedCloud->points[k]);
                     }
                 }
             }
-
+            // 降低采样频率 防止选取过于密集
+            // surfPointsLessFlatScan中有过多的点云，如果点云太多，计算量太大
+            // 进行下采样，可以大大减少计算量
             surfPointsLessFlatScanDS->clear();
             downSizeFilter.setInputCloud(surfPointsLessFlatScan);
             downSizeFilter.filter(*surfPointsLessFlatScanDS);
@@ -859,8 +917,15 @@ public:
 
     void TransformToStart(PointType const * const pi, PointType * const po)
     {
+        // intensity代表的是：整数部分ring序号，小数部分是当前点在这一圈中所花的时间
+        // 关于intensity， 参考 adjustDistortion() 函数中的定义
+        // s代表的其实是一个比例，s的计算方法应该如下：
+        // s=(pi->intensity - int(pi->intensity))/SCAN_PERIOD
+        // ===> SCAN_PERIOD=0.1(雷达频率为10hz)
+        // 以上理解感谢github用户StefanGlaser
+        // https://github.com/laboshinl/loam_velodyne/issues/29
         float s = 10 * (pi->intensity - int(pi->intensity));
-
+     
         float rx = s * transformCur[0];
         float ry = s * transformCur[1];
         float rz = s * transformCur[2];
@@ -868,6 +933,7 @@ public:
         float ty = s * transformCur[4];
         float tz = s * transformCur[5];
 
+        //原版，这里是默认加了负号的
         float x1 = cos(rz) * (pi->x - tx) + sin(rz) * (pi->y - ty);
         float y1 = -sin(rz) * (pi->x - tx) + cos(rz) * (pi->y - ty);
         float z1 = (pi->z - tz);
@@ -880,6 +946,7 @@ public:
         po->y = y2;
         po->z = sin(ry) * x2 + cos(ry) * z2;
         po->intensity = pi->intensity;
+
     }
 
     void TransformToEnd(PointType const * const pi, PointType * const po)
@@ -892,7 +959,7 @@ public:
         float tx = s * transformCur[3];
         float ty = s * transformCur[4];
         float tz = s * transformCur[5];
-
+        // 将 当前帧的当前点  从当前点所在的坐标系转换到  当前帧第一个点的坐标系
         float x1 = cos(rz) * (pi->x - tx) + sin(rz) * (pi->y - ty);
         float y1 = -sin(rz) * (pi->x - tx) + cos(rz) * (pi->y - ty);
         float z1 = (pi->z - tz);
@@ -911,7 +978,7 @@ public:
         tx = transformCur[3];
         ty = transformCur[4];
         tz = transformCur[5];
-
+        // 将 当前帧的当前点 从 当前帧的第一个点的坐标系 转换到 当前帧的最后一个点的坐标系
         float x4 = cos(ry) * x3 + sin(ry) * z3;
         float y4 = y3;
         float z4 = -sin(ry) * x3 + cos(ry) * z3;
@@ -923,7 +990,8 @@ public:
         float x6 = cos(rz) * x5 - sin(rz) * y5 + tx;
         float y6 = sin(rz) * x5 + cos(rz) * y5 + ty;
         float z6 = z5 + tz;
-
+        // 在去除加速对IMU的影响之后，
+        //  将点 变换到  IMU初始的 状态 下的坐标系
         float x7 = cosImuRollStart * (x6 - imuShiftFromStartX) 
                  - sinImuRollStart * (y6 - imuShiftFromStartY);
         float y7 = sinImuRollStart * (x6 - imuShiftFromStartX) 
@@ -937,7 +1005,7 @@ public:
         float x9 = cosImuYawStart * x8 + sinImuYawStart * z8;
         float y9 = y8;
         float z9 = -sinImuYawStart * x8 + cosImuYawStart * z8;
-
+        //将点 变换到 IMU最后一个状态下的坐标系
         float x10 = cos(imuYawLast) * x9 - sin(imuYawLast) * z9;
         float y10 = y9;
         float z10 = sin(imuYawLast) * x9 + cos(imuYawLast) * z9;
@@ -1151,49 +1219,60 @@ public:
             }
         }
     }
-
+    //2.2.1 特征点匹配中的面点匹配迭代
     void findCorrespondingSurfFeatures(int iterCount){
 
-        int surfPointsFlatNum = surfPointsFlat->points.size();
+        int surfPointsFlatNum = surfPointsFlat->points.size();//当前帧的面点的数目
 
         for (int i = 0; i < surfPointsFlatNum; i++) {
-
+            // 坐标变换到开始时刻，参数0是输入，参数1是输出，因为后面上一时刻的特征点转换到了每一帧的末尾时刻
             TransformToStart(&surfPointsFlat->points[i], &pointSel);
 
-            if (iterCount % 5 == 0) {
-
-                kdtreeSurfLast->nearestKSearch(pointSel, 1, pointSearchInd, pointSearchSqDis);
+            if (iterCount % 5 == 0) {//每五次迭代一次
+                // k点最近邻搜索，这里k=1
+                kdtreeSurfLast->nearestKSearch(pointSel, 1, pointSearchInd, pointSearchSqDis);//寻找该点在上一帧面点的最近点，寻找1个
                 int closestPointInd = -1, minPointInd2 = -1, minPointInd3 = -1;
-
-                if (pointSearchSqDis[0] < nearestFeatureSearchSqDist) {
-                    closestPointInd = pointSearchInd[0];
-                    int closestPointScan = int(laserCloudSurfLast->points[closestPointInd].intensity);
-
+                // sq:平方，距离的平方值
+                // 如果nearestKSearch找到的1(k=1)个邻近点满足条件
+                if (pointSearchSqDis[0] < nearestFeatureSearchSqDist) { //nearestFeatureSearchSqDist = 25;
+                    closestPointInd = pointSearchInd[0];//获得该点的序号
+                    // point.intensity 保存的是什么值? 第几次scan?
+                    // thisPoint.intensity = (float)rowIdn + (float)columnIdn / 10000.0;
+                    // fullInfoCloud->points[index].intensity = range;
+                    // 在imageProjection.cpp文件中有上述两行代码，两种类型的值，应该存的是上面一个
+                    int closestPointScan = int(laserCloudSurfLast->points[closestPointInd].intensity);//获得该点所在的激光线束
+                    // 主要功能是找到2个scan之内的最近点，并将找到的最近点及其序号保存
+                    // 之前扫描的保存到minPointSqDis2，之后的保存到minPointSqDis2
                     float pointSqDis, minPointSqDis2 = nearestFeatureSearchSqDist, minPointSqDis3 = nearestFeatureSearchSqDist;
+                    //  从已找到的第一个激光点 开始往大序号开始寻找
                     for (int j = closestPointInd + 1; j < surfPointsFlatNum; j++) {
+                        //由于segmented 是有序排列的，按照水平方向、线束依次排序，所以一旦检测到点的线束大于第一个找到的点的线束过多，以后一定也是如此
+                        // int类型的值加上2.5? 为什么不直接加上2?
+                        // 四舍五入
                         if (int(laserCloudSurfLast->points[j].intensity) > closestPointScan + 2.5) {
                             break;
                         }
-
+                        //计算均方差
                         pointSqDis = (laserCloudSurfLast->points[j].x - pointSel.x) * 
                                      (laserCloudSurfLast->points[j].x - pointSel.x) + 
                                      (laserCloudSurfLast->points[j].y - pointSel.y) * 
                                      (laserCloudSurfLast->points[j].y - pointSel.y) + 
                                      (laserCloudSurfLast->points[j].z - pointSel.z) * 
                                      (laserCloudSurfLast->points[j].z - pointSel.z);
-
+                        //找到一定是和第一个点相同线束的
                         if (int(laserCloudSurfLast->points[j].intensity) <= closestPointScan) {
                             if (pointSqDis < minPointSqDis2) {
                               minPointSqDis2 = pointSqDis;
                               minPointInd2 = j;
                             }
-                        } else {
+                        } else {//找到的一定是和第一个点不同线束的
                             if (pointSqDis < minPointSqDis3) {
                                 minPointSqDis3 = pointSqDis;
                                 minPointInd3 = j;
                             }
                         }
                     }
+                    // 往前找
                     for (int j = closestPointInd - 1; j >= 0; j--) {
                         if (int(laserCloudSurfLast->points[j].intensity) < closestPointScan - 2.5) {
                             break;
@@ -1205,13 +1284,13 @@ public:
                                      (laserCloudSurfLast->points[j].y - pointSel.y) + 
                                      (laserCloudSurfLast->points[j].z - pointSel.z) * 
                                      (laserCloudSurfLast->points[j].z - pointSel.z);
-
+                        //找到一定是和第一个点相同线束的
                         if (int(laserCloudSurfLast->points[j].intensity) >= closestPointScan) {
                             if (pointSqDis < minPointSqDis2) {
                                 minPointSqDis2 = pointSqDis;
                                 minPointInd2 = j;
                             }
-                        } else {
+                        } else {//找到的一定是和第一个点不同线束的
                             if (pointSqDis < minPointSqDis3) {
                                 minPointSqDis3 = pointSqDis;
                                 minPointInd3 = j;
@@ -1224,7 +1303,10 @@ public:
                 pointSearchSurfInd2[i] = minPointInd2;
                 pointSearchSurfInd3[i] = minPointInd3;
             }
-
+            // 前后都能找到对应的最近点在给定范围之内
+            // 那么就开始计算距离
+            // [pa,pb,pc]是tripod1，tripod2，tripod3这3个点构成的一个平面的方向量，
+            // ps是模长，它是三角形面积的2倍
             if (pointSearchSurfInd2[i] >= 0 && pointSearchSurfInd3[i] >= 0) {
 
                 tripod1 = laserCloudSurfLast->points[pointSearchSurfInd1[i]];
@@ -1245,21 +1327,26 @@ public:
                 pb /= ps;
                 pc /= ps;
                 pd /= ps;
-
+                // 距离没有取绝对值
+                // 两个向量的点乘，分母除以ps中已经除掉了，
+                // 加pd原因:pointSel与tripod1构成的线段需要相减
                 float pd2 = pa * pointSel.x + pb * pointSel.y + pc * pointSel.z + pd;
 
                 float s = 1;
                 if (iterCount >= 5) {
+                // /加上影响因子
                     s = 1 - 1.8 * fabs(pd2) / sqrt(sqrt(pointSel.x * pointSel.x
                             + pointSel.y * pointSel.y + pointSel.z * pointSel.z));
                 }
 
                 if (s > 0.1 && pd2 != 0) {
+                    // [x,y,z]是整个平面的单位法量
+                    // intensity是平面外一点到该平面的距离
                     coeff.x = s * pa;
                     coeff.y = s * pb;
                     coeff.z = s * pc;
                     coeff.intensity = s * pd2;
-
+                    // 未经变换的点放入laserCloudOri队列，距离，法向量值放入coeffSel
                     laserCloudOri->push_back(surfPointsFlat->points[i]);
                     coeffSel->push_back(coeff);
                 }
@@ -1298,6 +1385,7 @@ public:
         float c1 = -b6; float c2 = b5; float c3 = tx*b6 - ty*b5; float c4 = -crx*crz; float c5 = crx*srz; float c6 = ty*c5 + tx*-c4;
         float c7 = b2; float c8 = -b1; float c9 = tx*-b2 - ty*-b1;
 
+        // 构建雅可比矩阵，求解
         for (int i = 0; i < pointSelNum; i++) {
 
             pointOri = laserCloudOri->points[i];
@@ -1314,26 +1402,29 @@ public:
             float aty = -b6 * coeff.x + c4 * coeff.y + b2 * coeff.z;
 
             float d2 = coeff.intensity;
-
+            // A=[J的偏导]; B=[权重系数*(点到直线的距离)] 求解公式: AX=B
+            // 为了让左边满秩，同乘At-> At*A*X = At*B
             matA.at<float>(i, 0) = arx;
             matA.at<float>(i, 1) = arz;
             matA.at<float>(i, 2) = aty;
             matB.at<float>(i, 0) = -0.05 * d2;
         }
-
+        // transpose函数求得matA的转置matAt
         cv::transpose(matA, matAt);
         matAtA = matAt * matA;
         matAtB = matAt * matB;
+        // 通过QR分解的方法，求解方程AtA*X=AtB，得到X
         cv::solve(matAtA, matAtB, matX, cv::DECOMP_QR);
 
         if (iterCount == 0) {
             cv::Mat matE(1, 3, CV_32F, cv::Scalar::all(0));
             cv::Mat matV(3, 3, CV_32F, cv::Scalar::all(0));
             cv::Mat matV2(3, 3, CV_32F, cv::Scalar::all(0));
-
+            // 计算At*A的特征值和特征向量
+            // 特征值存放在matE，特征向量matV
             cv::eigen(matAtA, matE, matV);
             matV.copyTo(matV2);
-
+            // 退化的具体表现是指什么？
             isDegenerate = false;
             float eignThre[3] = {10, 10, 10};
             for (int i = 2; i >= 0; i--) {
@@ -1341,6 +1432,7 @@ public:
                     for (int j = 0; j < 3; j++) {
                         matV2.at<float>(i, j) = 0;
                     }
+                    // 存在比10小的特征值则出现退化
                     isDegenerate = true;
                 } else {
                     break;
@@ -1354,7 +1446,7 @@ public:
             matX.copyTo(matX2);
             matX = matP * matX2;
         }
-
+        //lego-loam 使用 面点更新  rx rz ty
         transformCur[0] += matX.at<float>(0, 0);
         transformCur[2] += matX.at<float>(1, 0);
         transformCur[4] += matX.at<float>(2, 0);
@@ -1363,7 +1455,7 @@ public:
             if(isnan(transformCur[i]))
                 transformCur[i]=0;
         }
-
+        //判断变化的大小是否大于一定程度
         float deltaR = sqrt(
                             pow(rad2deg(matX.at<float>(0, 0)), 2) +
                             pow(rad2deg(matX.at<float>(1, 0)), 2));
@@ -1421,20 +1513,23 @@ public:
             matA.at<float>(i, 2) = atz;
             matB.at<float>(i, 0) = -0.05 * d2;
         }
-
+        // transpose函数求得matA的转置matAt
         cv::transpose(matA, matAt);
         matAtA = matAt * matA;
         matAtB = matAt * matB;
+        // 通过QR分解的方法，求解方程AtA*X=AtB，得到X
         cv::solve(matAtA, matAtB, matX, cv::DECOMP_QR);
 
         if (iterCount == 0) {
             cv::Mat matE(1, 3, CV_32F, cv::Scalar::all(0));
             cv::Mat matV(3, 3, CV_32F, cv::Scalar::all(0));
             cv::Mat matV2(3, 3, CV_32F, cv::Scalar::all(0));
-
-            cv::eigen(matAtA, matE, matV);
+            // 计算At*A的特征值和特征向量
+            // 特征值存放在matE，特征向量matV
+            cv::eigen(matAtA, matE, matV);//求matAtA对称矩阵的特征值和特征向量
             matV.copyTo(matV2);
 
+            // 退化的具体表现是指什么？
             isDegenerate = false;
             float eignThre[3] = {10, 10, 10};
             for (int i = 2; i >= 0; i--) {
@@ -1442,6 +1537,7 @@ public:
                     for (int j = 0; j < 3; j++) {
                         matV2.at<float>(i, j) = 0;
                     }
+                    // 存在比10小的特征值则出现退化
                     isDegenerate = true;
                 } else {
                     break;
@@ -1636,6 +1732,7 @@ public:
         systemInitedLM = true;
     }
 
+    //2.1 更新初始预测位姿，预测位姿，点云畸变处理
     void updateInitialGuess(){
 
         imuPitchLast = imuPitchCur;
@@ -1649,33 +1746,41 @@ public:
         imuVeloFromStartX = imuVeloFromStartXCur;
         imuVeloFromStartY = imuVeloFromStartYCur;
         imuVeloFromStartZ = imuVeloFromStartZCur;
-
+        // 关于下面负号的说明：
+        // transformCur是在Cur坐标系下的 p_start=R*p_cur+t
+        // R和t是在Cur坐标系下的
+        // 而imuAngularFromStart是在start坐标系下的，所以需要加负号
         if (imuAngularFromStartX != 0 || imuAngularFromStartY != 0 || imuAngularFromStartZ != 0){
+           //注意：这里X赋予了2，这是由于IMU安装位置决定的，从此刻才第一次将角度转换到使用的坐标系中
             transformCur[0] = - imuAngularFromStartY;
             transformCur[1] = - imuAngularFromStartZ;
             transformCur[2] = - imuAngularFromStartX;
         }
-        
+        // 速度乘以时间，当前变换中的位移
         if (imuVeloFromStartX != 0 || imuVeloFromStartY != 0 || imuVeloFromStartZ != 0){
-            transformCur[3] -= imuVeloFromStartX * scanPeriod;
+            transformCur[3] -= imuVeloFromStartX * scanPeriod;//scanPeriod = 0.1;
             transformCur[4] -= imuVeloFromStartY * scanPeriod;
             transformCur[5] -= imuVeloFromStartZ * scanPeriod;
         }
     }
-
+    //2.2 特征点匹配 
     void updateTransformation(){
-
-        if (laserCloudCornerLastNum < 10 || laserCloudSurfLastNum < 100)
+        // 如果角特征点数量 和 面特征点数量较少 返回不执行匹配过程
+        if (laserCloudCornerLastNum < 10 || laserCloudSurfLastNum < 100)//上一帧的特征点不得少于10，100
             return;
-
-        for (int iterCount1 = 0; iterCount1 < 25; iterCount1++) {
+        // 面特征匹配
+        for (int iterCount1 = 0; iterCount1 < 25; iterCount1++) {//迭代25次
             laserCloudOri->clear();
             coeffSel->clear();
-
+            //2.2.1 特征点匹配中的面点匹配迭代
+            // 找到对应的特征平面
+            // 然后计算协方差矩阵，保存在coeffSel队列中
+            // laserCloudOri 中保存的是对应于coeffSel的未转换到开始时刻的原始点云数据
             findCorrespondingSurfFeatures(iterCount1);
 
             if (laserCloudOri->points.size() < 10)
                 continue;
+                // 面特征匹配计算变换矩阵
             if (calculateTransformationSurf(iterCount1) == false)
                 break;
         }
@@ -1684,7 +1789,7 @@ public:
 
             laserCloudOri->clear();
             coeffSel->clear();
-
+                // 特征匹配计算变换矩阵
             findCorrespondingCornerFeatures(iterCount2);
 
             if (laserCloudOri->points.size() < 10)
@@ -1696,9 +1801,12 @@ public:
 
     void integrateTransformation(){
         float rx, ry, rz, tx, ty, tz;
+        //将 根据激光点云求得到 帧间旋转变换 累计到 变换位姿
         AccumulateRotation(transformSum[0], transformSum[1], transformSum[2], 
                            -transformCur[0], -transformCur[1], -transformCur[2], rx, ry, rz);
-
+        // imuShiftFromStartX 是加速度引起的误差
+        // 将 根据激光点云求得的  位移变换 去除 加速度的影响之后（因为是匀速运动模型）， 
+        //  从 当前帧的 坐标系下  变换到 世界坐标系下 
         float x1 = cos(rz) * (transformCur[3] - imuShiftFromStartX) 
                  - sin(rz) * (transformCur[4] - imuShiftFromStartY);
         float y1 = sin(rz) * (transformCur[3] - imuShiftFromStartX) 
@@ -1712,7 +1820,10 @@ public:
         tx = transformSum[3] - (cos(ry) * x2 + sin(ry) * z2);
         ty = transformSum[4] - y2;
         tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
-
+   //(rx, ry, rz, imuPitchStart, imuYawStart, imuRollStart, imuPitchLast, imuYawLast, imuRollLast, rx, ry, rz);
+   //rx, ry, rz存放累计的到tend的旋转，imu分别存放到开始和到结束的旋转，是imu的测量数据。
+   //目的：纠正精确化rx, ry, rz的值，imuEnd*inv(imuStart)*Sum表示在估计的里程计中附加IMU测量的旋转量。
+   // 将 根据激光点云所求得到的 旋转从 当前帧第一个点云坐标系下 变换到最后一个点云坐标系下
         PluginIMURotation(rx, ry, rz, imuPitchStart, imuYawStart, imuRollStart, 
                           imuPitchLast, imuYawLast, imuRollLast, rx, ry, rz);
 
@@ -1816,7 +1927,7 @@ public:
 
     void runFeatureAssociation()
     {
-
+        //判断是否有新数据到来，并重置标志位
         if (newSegmentedCloud && newSegmentedCloudInfo && newOutlierCloud &&
             std::abs(timeNewSegmentedCloudInfo - timeNewSegmentedCloud) < 0.05 &&
             std::abs(timeNewOutlierCloud - timeNewSegmentedCloud) < 0.05){
@@ -1830,32 +1941,33 @@ public:
         /**
         	1. Feature Extraction
         */
+       //1.1 去除运动畸变，依靠IMU传感器
         adjustDistortion();
-
+        //1.2 计算曲率，legoloam论文里面称之为粗糙度（roughness），与LOAM相同方法称之为curve？ or smoothness平滑度
         calculateSmoothness();
-
+        //1.3 标记出远点和离散点
         markOccludedPoints();
-
+        //1.4 特征提取
         extractFeatures();
-
+        //1.5 发布提取的特征点云消息
         publishCloud(); // cloud for visualization
 	
         /**
-		2. Feature Association
+		2. Feature Association 特征关联
         */
         if (!systemInitedLM) {
             checkSystemInitialization();
             return;
         }
-
+        //2.1 更新初始位姿
         updateInitialGuess();
-
+        //2.2 特征点匹配 
         updateTransformation();
-
+        // 2.3 坐标变换
         integrateTransformation();
-
+        // 2.4 发布雷达里程计消息
         publishOdometry();
-
+        // 2.5 发布用于图优化的点云
         publishCloudsLast(); // cloud to mapOptimization
     }
 };

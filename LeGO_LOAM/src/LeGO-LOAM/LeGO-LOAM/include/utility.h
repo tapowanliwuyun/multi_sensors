@@ -57,7 +57,8 @@ extern const string imuTopic = "/imu/data";
 extern const string fileDirectory = "/tmp/";
 
 // Using velodyne cloud "ring" channel for image projection (other lidar may have different name for this channel, change "PointXYZIR" below)
-extern const bool useCloudRing = true; // if true, ang_res_y and ang_bottom are not used
+// 使用velodyne点云“ring”通道进行图像投影（其他激光雷达可能对此通道使用不同的名称，请更改下面的“PointXYZIR”）
+extern const bool useCloudRing = true; // if true, ang_res_y and ang_bottom are not used 如果为true，则不使用ang_resy和ang_bottom
 
 // VLP-16
 extern const int N_SCAN = 16;
