@@ -10,15 +10,24 @@
 */devel_clion/
 */.vscode/
 
+#F_LOAM
+*/build/
+*/devel/
+*/build_clion/
+*/devel_clion/
+
 #ku
 
 #loam_velodyne
 */build/
 */devel/
+*/.vscode/
 
 #LeGO_LOAM
 */build/
 */devel/
+*/my_data/
+*/.vscode/
 
 #localization_in_auto_driving
 */*/build/
@@ -27,7 +36,16 @@
 */*/devel_clion/
 */*/*/*/slam_data/
 
+#pcd_rviz
+*/build/
+*/devel/
+*/.vscode/
 
+#surfel_mapping
+*/build/
+*/devel/
+*/my_data/
+*/.vscode/
 
 */*/*/build/
 */*/cmake-build-debug/
