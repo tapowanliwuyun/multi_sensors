@@ -590,7 +590,8 @@ int main(int argc, char **argv)
         return 0;
     }
     // 订阅初始的激光雷达数据，并注册回调函数laserCloudHandler
-    ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_points", 100, laserCloudHandler);
+    ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_points", 100, laserCloudHandler);// TODO_czy   nsh_indoor_outdoor.bag
+    //ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/rslidar_points", 100, laserCloudHandler);// TODO_czy   nsh_indoor_outdoor.bag
     // 发布话题：有序点云（删除过近点、设置索引），极大边线点集合，次极大边线点集合，极小平面点集合，次极小平面点集合,删除的点云
     pubLaserCloud = nh.advertise<sensor_msgs::PointCloud2>("/velodyne_cloud_2", 100);
 
