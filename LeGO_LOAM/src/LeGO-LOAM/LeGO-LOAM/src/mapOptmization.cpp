@@ -959,8 +959,8 @@ public:
             return;	
 		
     	if (loopClosureEnableFlag == true){
-    	    // only use recent key poses for graph building
-                if (recentCornerCloudKeyFrames.size() < surroundingKeyframeSearchNum){ // queue is not full (the beginning of mapping or a loop is just closed)
+    	    // only use recent key poses for graph building 仅使用最近的关键姿势进行图形构建
+                if (recentCornerCloudKeyFrames.size() < surroundingKeyframeSearchNum){ // queue is not full (the beginning of mapping or a loop is just closed) 队列未满（映射的开始或循环刚刚结束)
                     // clear recent key frames queue
                     recentCornerCloudKeyFrames. clear();
                     recentSurfCloudKeyFrames.   clear();
@@ -1001,7 +1001,7 @@ public:
     	}else{
             surroundingKeyPoses->clear();
             surroundingKeyPosesDS->clear();
-    	    // extract all the nearby key poses and downsample them
+    	    // extract all the nearby key poses and downsample them 提取所有附近的关键姿势并对其进行下采样
     	    kdtreeSurroundingKeyPoses->setInputCloud(cloudKeyPoses3D);
     	    kdtreeSurroundingKeyPoses->radiusSearch(currentRobotPosPoint, (double)surroundingKeyframeSearchRadius, pointSearchInd, pointSearchSqDis, 0);
     	    for (int i = 0; i < pointSearchInd.size(); ++i)
