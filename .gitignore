@@ -10,6 +10,11 @@
 */devel_clion/
 */.vscode/
 
+#biaoding
+#biaoding/
+*/biaoding/*/build/
+*/biaoding/*/devel/
+
 #F_LOAM
 */build/
 */devel/
