@@ -27,15 +27,20 @@
 
 #ku
 
-#loam_velodyne
-*/build/
-*/devel/
-*/.vscode/
-
 #LeGO_LOAM
 */build/
 */devel/
 */my_data/
+*/.vscode/
+
+#lio_sam
+#lio_sam/
+*/lio_sam/build/
+*/lio_sam/devel/
+
+#loam_velodyne
+*/build/
+*/devel/
 */.vscode/
 
 #localization_in_auto_driving
