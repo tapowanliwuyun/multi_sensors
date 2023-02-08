@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/opt/ros/melodic/include/**",
+        "/home/bupo/my_study/multi_sensors/biaoding/lidar_imu_calib/src/lidar_imu_calib/lidar_imu_calib/include/**",
+        "/home/bupo/my_study/multi_sensors/biaoding/lidar_imu_calib/src/lidar_imu_calib/ndt_omp/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

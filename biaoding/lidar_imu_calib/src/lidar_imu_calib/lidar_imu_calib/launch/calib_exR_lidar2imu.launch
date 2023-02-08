@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="lidar_imu_calib" type="calib_exR_lidar2imu_node" name="calib_exR_lidar2imu_node" output="screen">
+        <param name="/lidar_topic" value="/velodyne_points"/>
+        <param name="/imu_topic" value="/imu_raw"/>
+        <param name="/bag_file" value="/home/bupo/bag_file/bag_czy/11301012_lidar_imu_demo_indoor_znslaolou.bag"/>
+    </node>
+</launch>

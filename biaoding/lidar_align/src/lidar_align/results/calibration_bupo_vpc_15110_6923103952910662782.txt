@@ -1,0 +1,19 @@
+Active Transformation Vector (x,y,z,rx,ry,rz) from the Pose Sensor Frame to  the Lidar Frame:
+[0, -0.000707107, 0, 1.14591, -0.000106406, -1.39637]
+
+Active Transformation Matrix from the Pose Sensor Frame to  the Lidar Frame:
+    0.262958     0.751631      -0.6049            0
+   -0.751723    -0.233397    -0.616796 -0.000707107
+   -0.604785     0.616909     0.503645            0
+           0            0            0            1
+
+Active Translation Vector (x,y,z) from the Pose Sensor Frame to  the Lidar Frame:
+[0, -0.000707107, 0]
+
+Active Hamiltonen Quaternion (w,x,y,z) the Pose Sensor Frame to  the Lidar Frame:
+[0.619114, 0.498174, -4.62592e-05, -0.607059]
+
+Time offset that must be added to lidar timestamps in seconds:
+0
+
+ROS Static TF Publisher: <node pkg="tf" type="static_transform_publisher" name="pose_lidar_broadcaster" args="0 -0.000707107 0 0.498174 -4.62592e-05 -0.607059 0.619114 POSE_FRAME LIDAR_FRAME 100" />
