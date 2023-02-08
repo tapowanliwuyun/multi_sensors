@@ -55,6 +55,14 @@
 */devel/
 */.vscode/
 
+#r3live
+#r3live/
+*/r3live/livox_ros_driver_for_R2LIVE-main/
+*/r3live/Livox-SDK/
+*/r3live/ws_livox/
+*/r3live/r3live_ws/build/
+*/r3live/r3live_ws/devel/
+
 #surfel_mapping
 */build/
 */devel/
