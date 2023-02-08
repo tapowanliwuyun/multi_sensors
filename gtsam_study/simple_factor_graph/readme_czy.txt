@@ -1,6 +1,9 @@
 1. 创建一个简单因子图	
 ./simple_factor_graph
 
+
+
+
 2. 因子图进行最小乘优化
 ./LSM_factor_graph 
 
