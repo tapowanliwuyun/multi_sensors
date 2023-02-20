@@ -63,7 +63,7 @@ int main(int argc, const char** argv) {
     Cal3_S2::shared_ptr K(new Cal3_S2(50.0,50.0,0.0,50.0,50.0));
     
     //step2: 构造相关参数
-    noiseModel::Isotropic::shared_ptr mewsurementNoise=noiseModel::Isotropic::Sigma(2,1.0);
+
     vector<Point3> points=createPoints();
     vector<Pose3> poses=createPoses();
 
@@ -75,6 +75,8 @@ int main(int argc, const char** argv) {
     noiseModel::Diagonal::shared_ptr prriornoise=noiseModel::Diagonal::Sigmas(Vector6);
 
     graph.emplace_shared<PriorFactor<Pose3> >(Symbol('x',0),poses[0],prriornoise);
+    
+    noiseModel::Isotropic::shared_ptr mewsurementNoise=noiseModel::Isotropic::Sigma(2,1.0);
     for(size_t i=0;i<poses.size();i++){
         SimpleCamera camera(poses[i],*K);//初始化相机内参和姿态
         for(size_t j=0;j<points.size();j++){

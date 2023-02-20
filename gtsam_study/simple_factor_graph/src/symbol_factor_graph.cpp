@@ -35,11 +35,11 @@ int main(int argc,char **argv){
     NonlinearFactorGraph graph;
      Symbol x1('x',1),x2('x',2),x3('x',3);
      Symbol l1('l',1),l2('l',2);
-    // cout<<"x1"<<x1.key()<<endl;
-    // cout<<"x2"<<x2.key()<<endl;
-    // cout<<"x3"<<x3.key()<<endl;
-    // cout<<"l1"<<l1.key()<<endl;
-    // cout<<"l2"<<l2.key()<<endl;
+     cout<<"x1"<<x1.key()<<endl;
+     cout<<"x2"<<x2.key()<<endl;
+     cout<<"x3"<<x3.key()<<endl;
+     cout<<"l1"<<l1.key()<<endl;
+     cout<<"l2"<<l2.key()<<endl;
     Pose2 prior(0,0,0);//  起点
     noiseModel::Diagonal::shared_ptr priorNoise=noiseModel::Diagonal::Sigmas(Vector3(0.3,0.3,0.1));
     graph.emplace_shared<PriorFactor<Pose2> >(x1,prior,priorNoise);
@@ -55,7 +55,7 @@ int main(int argc,char **argv){
     noiseModel::Diagonal::shared_ptr measurementNoise=noiseModel::Diagonal::Sigmas(Vector2(0.1,0.2));
     Rot2 bearing11=Rot2::fromDegrees(45);//l1,x1,x2,构成的夹角
     Rot2 bearing21=Rot2::fromDegrees(90);//x1,x2,l1,构成的夹角
-    Rot2 bearing32=Rot2::fromDegrees(90);//x1,x2,l2,构成的夹角
+    Rot2 bearing32=Rot2::fromDegrees(90);//x2,x3,l2,构成的夹角
     double range11=sqrt(8),range21=2.0,range32=2.0;
     //填入
     graph.emplace_shared<BearingRangeFactor<Pose2, Point2> >(x1, l1, bearing11, range11, measurementNoise);

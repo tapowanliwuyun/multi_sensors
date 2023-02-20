@@ -17,7 +17,7 @@ using namespace gtsam;
 using symbol_shorthand::X;//用作表示    姿态(x,y,z,r,p,y)
 using symbol_shorthand::V;//用表示      速度导数(xdot,ydot,zdot)
 using symbol_shorthand::B;//陀螺仪残差  (ax,ay,az,gx,gy,gz)
-string inputfile="../data/imu/imuAndGPSdata.csv";
+string inputfile="../data/imu/imuAndGPSdata.csv";   
 string outputfile="../data/imu/result1.csv";
 PreintegrationType *imu_preintegrated_;
 //    Matrix3 biasAccCovariance;     3*3矩阵 加速度计的协防差矩阵，（可以根据残差计算加速度雅克比矩阵逐步更新）
@@ -41,13 +41,13 @@ int main(int argc, const char** argv) {
     }
     getline(file,value,'\n');//换行
     initial_state(9) = atof(value.c_str());
-    Rot3 prior_rotation=Rot3::Quaternion(initial_state(6),initial_state(3),initial_state(4),initial_state(5));
-    Point3 prior_point(initial_state(0),initial_state(1),initial_state(2));
+    Rot3 prior_rotation=Rot3::Quaternion(initial_state(6),initial_state(3),initial_state(4),initial_state(5));//初始位姿
+    Point3 prior_point(initial_state(0),initial_state(1),initial_state(2));//初始位置
     Pose3 prior_pose(prior_rotation,prior_point);                               //初始位姿
     Vector3 prior_velocity(initial_state(7),initial_state(8),initial_state(9)); //初始速度
     imuBias::ConstantBias prior_imu_bias;//残差，默认设为0
 
-    //初始化值
+    //初始化值，定义初始点并且为赋予初始值
     Values initial_values;
     int correction_count=0;
     //位姿
@@ -59,12 +59,13 @@ int main(int argc, const char** argv) {
     cout << "initial state:\n" << initial_state.transpose() <<endl;
     //设置噪声模型
     //一般为设置为对角噪声
-        gtsam::Vector Vector6(6);
+    //在因子图中添加初值约束
+    gtsam::Vector Vector6(6);
     Vector6 << 0.01,0.01,0.01,0.5,0.5,0.5;
     noiseModel::Diagonal::shared_ptr pose_noise_model=noiseModel::Diagonal::Sigmas(Vector6);
     noiseModel::Diagonal::shared_ptr velocity_noise_model=noiseModel::Isotropic::Sigma(3,0.1);
     noiseModel::Diagonal::shared_ptr bias_noise_model=noiseModel::Isotropic::Sigma(6,0.001);
-    NonlinearFactorGraph *graph = new NonlinearFactorGraph();
+    NonlinearFactorGraph *graph = new NonlinearFactorGraph();//定义因子图
     graph->add(PriorFactor<Pose3>(X(correction_count), prior_pose, pose_noise_model));
     graph->add(PriorFactor<Vector3>(V(correction_count), prior_velocity,velocity_noise_model));
     graph->add(PriorFactor<imuBias::ConstantBias>(B(correction_count), prior_imu_bias,bias_noise_model));
@@ -86,9 +87,9 @@ int main(int argc, const char** argv) {
     //MakeSharedU：NEU坐标系，g默认为 9.81
     
     // 设置预积分分参数
-    p->accelerometerCovariance=measured_acc_cov;
-    p->integrationCovariance=integration_error_cov;
-    p->gyroscopeCovariance=measured_omega_cov;
+    p->accelerometerCovariance=measured_acc_cov;//加速度计
+    p->integrationCovariance=integration_error_cov;//积分
+    p->gyroscopeCovariance=measured_omega_cov;//陀螺仪
 
     //预计分测量值
     p->biasAccCovariance=bias_acc_cov;

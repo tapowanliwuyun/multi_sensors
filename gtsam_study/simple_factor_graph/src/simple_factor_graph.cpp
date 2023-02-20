@@ -77,9 +77,9 @@ int main(int argc, const char** argv) {
     //查询优化结果
     for (const gtsam::Values::ConstKeyValuePair& key_value: result )
     {   
-        cout<<"key "<<key_value.key<<endl;
+        cout<<"key \n"<<key_value.key<<endl;
         Pose2 pose = key_value.value.cast<gtsam::Pose2>();//类型转换
-        cout<<"data:"<<pose.matrix()<<endl;
+        cout<<"data:\n"<<pose.matrix()<<endl;
     }
     //遍历
     for ( gtsam::NonlinearFactor::shared_ptr factor: graph )//遍历因子图节点

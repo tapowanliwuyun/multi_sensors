@@ -81,7 +81,7 @@ int main(int argc, const char** argv) {
         Pose3 noise(Rot3::Rodrigues(-0.1, 0.2, 0.25), Point3(0.05, -0.10, 0.20));
         Pose3 initial_xi=poses[i].compose(noise);//初始旋转值
         initialEstimate.insert(symbol('x',i),initial_xi);
-        
+
         // 设置起始值同时设置当前帧的坐标系，并在第一个路标点上设置尺度，ISAM使用增量求解，至少需要两个值
         if(i==0){
          // Add a prior on pose x0, with 30cm std on x,y,z 0.1 rad on roll,pitch,yaw
