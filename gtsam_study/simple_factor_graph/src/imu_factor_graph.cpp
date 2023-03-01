@@ -124,7 +124,7 @@ int main(int argc, const char** argv) {
             }
             getline(file, value, '\n');
             imu(5) = atof(value.c_str());
-            // 检测测量值加入预计分
+            // 检测测量值加入预计分，参数：加速度、角速度、时间
             imu_preintegrated_->integrateMeasurement(imu.head<3>(), imu.tail<3>(), dt);
 
         }else if(type ==1){//Gps测量数据
