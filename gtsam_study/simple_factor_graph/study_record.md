@@ -187,7 +187,8 @@ initial.print("\nInitial Estimate:\n"); // print
 
 # 2 构建因子
 ## 2.1 官方因子库
-### 2.1.1 一元边 位姿先验因子 PriorFactor
+### 2.1.1 一元边 位姿先验因子 可以理解为固定点
+#### 2.1.1.1 PriorFactor因子
 1. 头文件
 ```cpp
 #include <gtsam/slam/PriorFactor.h> 
@@ -204,6 +205,19 @@ initial.print("\nInitial Estimate:\n"); // print
     graph.emplace_shared<PriorFactor<Pose2> >(1,priorMean,priorNoise);//可以添加多个
 ```
 如1.1 [simple_factor_graph](./src/simple_factor_graph.cpp)
+
+#### 2.1.1.2 NonlinearEquality因子
+1. 头文件
+```cpp
+#include <gtsam/nonlinear/NonlinearEquality.h>
+```
+
+2. 使用
+```cpp
+  //graph.emplace_shared<NonlinearEquality<Pose3> >(1, Pose3());
+  graph.emplace_shared<PriorFactor<Pose3>>(1, Pose3());
+```
+如[StereoVOExample.cpp](../gtsam_study_cvlife/cap7_visual_odometry_in_GTSAM/src/StereoVOExample.cpp)
 
 ### 2.1.2  二元边 odom因子 BetweenFactor
 1. 头文件
