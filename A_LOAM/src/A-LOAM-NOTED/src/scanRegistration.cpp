@@ -34,7 +34,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//scanRegistrationµÄ¹¦ÄÜ¾ÍÊÇÌáÈ¡ÌØÕ÷µã¡£
+//scanRegistrationçš„åŠŸèƒ½å°±æ˜¯æå–ç‰¹å¾ç‚¹ã€‚
 #include <cmath>
 #include <vector>
 #include <string>
@@ -68,7 +68,7 @@ int cloudSortInd[400000];
 int cloudNeighborPicked[400000];
 int cloudLabel[400000];
 
-//compº¯Êı£¬±È½ÏÁ½¸öµãµÄÇúÂÊ
+//compå‡½æ•°ï¼Œæ¯”è¾ƒä¸¤ä¸ªç‚¹çš„æ›²ç‡
 bool comp (int i,int j) { return (cloudCurvature[i]<cloudCurvature[j]); }
 
 ros::Publisher pubLaserCloud;
@@ -83,12 +83,12 @@ bool PUB_EACH_LINE = false;
 
 double MINIMUM_RANGE = 0.1;
 
-//removeClosedPointCloudº¯Êı£¬¶ªÆúÒ»¶¨¾àÀëÒÔÄÚµÄµã
+//removeClosedPointCloudå‡½æ•°ï¼Œä¸¢å¼ƒä¸€å®šè·ç¦»ä»¥å†…çš„ç‚¹
 template <typename PointT>
 void removeClosedPointCloud(const pcl::PointCloud<PointT> &cloud_in,
                             pcl::PointCloud<PointT> &cloud_out, float thres)
 {
-    // ¼ÙÈçÊäÈëÊä³öµãÔÆ²»Ê¹ÓÃÍ¬Ò»¸ö±äÁ¿£¬ÔòĞèÒª½«Êä³öµãÔÆµÄÊ±¼ä´ÁºÍÈİÆ÷´óĞ¡ÓëÊäÈëµãÔÆÍ¬²½
+    // å‡å¦‚è¾“å…¥è¾“å‡ºç‚¹äº‘ä¸ä½¿ç”¨åŒä¸€ä¸ªå˜é‡ï¼Œåˆ™éœ€è¦å°†è¾“å‡ºç‚¹äº‘çš„æ—¶é—´æˆ³å’Œå®¹å™¨å¤§å°ä¸è¾“å…¥ç‚¹äº‘åŒæ­¥
     if (&cloud_in != &cloud_out)
     {
         cloud_out.header = cloud_in.header;
@@ -96,7 +96,7 @@ void removeClosedPointCloud(const pcl::PointCloud<PointT> &cloud_in,
     }
 
     size_t j = 0;
-    // °ÑµãÔÆ¾àÀëĞ¡ÓÚ¸ø¶¨ãĞÖµµÄÈ¥³ıµô
+    // æŠŠç‚¹äº‘è·ç¦»å°äºç»™å®šé˜ˆå€¼çš„å»é™¤æ‰
     for (size_t i = 0; i < cloud_in.points.size(); ++i)
     {
         if (cloud_in.points[i].x * cloud_in.points[i].x + cloud_in.points[i].y * cloud_in.points[i].y + cloud_in.points[i].z * cloud_in.points[i].z < thres * thres)
@@ -104,77 +104,76 @@ void removeClosedPointCloud(const pcl::PointCloud<PointT> &cloud_in,
         cloud_out.points[j] = cloud_in.points[i];
         j++;
     }
-    // ÖØĞÂµ÷ÕûÊä³öÈİÆ÷´óĞ¡
+    // é‡æ–°è°ƒæ•´è¾“å‡ºå®¹å™¨å¤§å°
     if (j != cloud_in.points.size())
     {
         cloud_out.points.resize(j);
     }
-    // ÕâÀïÊÇ¶ÔÃ¿ÌõÉ¨ÃèÏßÉÏµÄµãÔÆ½øĞĞÖ±Í¨ÂË²¨£¬Òò´ËÉèÖÃµãÔÆµÄ¸ß¶ÈÎª1£¬¿í¶ÈÎªÊıÁ¿£¬³íÃÜµãÔÆ
+    // è¿™é‡Œæ˜¯å¯¹æ¯æ¡æ‰«æçº¿ä¸Šçš„ç‚¹äº‘è¿›è¡Œç›´é€šæ»¤æ³¢ï¼Œå› æ­¤è®¾ç½®ç‚¹äº‘çš„é«˜åº¦ä¸º1ï¼Œå®½åº¦ä¸ºæ•°é‡ï¼Œç¨ å¯†ç‚¹äº‘
     cloud_out.height = 1;
     cloud_out.width = static_cast<uint32_t>(j);
     cloud_out.is_dense = true;
 }
 
-//Õâ¸öº¯ÊıÖ÷Òª¾ÍÊÇ¶Ô½ÓÊÕµ½µÄµãÔÆÊı¾İ½øĞĞ´¦Àí£¬
-//×îÖÕ·¢²¼¹Ø¼üµã£¨laser_cloud_sharp¡¢laser_cloud_less_sharp¡¢laser_cloud_flat¡¢laser_cloud_less_flat£©£¬ÒÔ·½±ãºóĞøÊ¹ÓÃ¡£
+//è¿™ä¸ªå‡½æ•°ä¸»è¦å°±æ˜¯å¯¹æ¥æ”¶åˆ°çš„ç‚¹äº‘æ•°æ®è¿›è¡Œå¤„ç†ï¼Œ
+//æœ€ç»ˆå‘å¸ƒå…³é”®ç‚¹ï¼ˆlaser_cloud_sharpã€laser_cloud_less_sharpã€laser_cloud_flatã€laser_cloud_less_flatï¼‰ï¼Œä»¥æ–¹ä¾¿åç»­ä½¿ç”¨ã€‚
 void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
 {
-    //ÏÂÃæÊÇ×ö³õÊ¼»¯£¬µ«ÊÇÕâÀïÑÓÊ±Îª0£¬Ïàµ±ÓÚÃ»ÓĞÑÓÊ±£¬Ö»ÊÇÁôÏÂÁË³õÊ¼»¯µÄ½Ó¿Ú¡£
+    //ä¸‹é¢æ˜¯åšåˆå§‹åŒ–ï¼Œä½†æ˜¯è¿™é‡Œå»¶æ—¶ä¸º0ï¼Œç›¸å½“äºæ²¡æœ‰å»¶æ—¶ï¼Œåªæ˜¯ç•™ä¸‹äº†åˆå§‹åŒ–çš„æ¥å£ã€‚
     if (!systemInited)
     {
         systemInitCount++;
-        if (systemInitCount >= systemDelay)
+        if (systemInitCount >= systemDelay)//systemDelay = 0;
         {
             systemInited = true;
         }
         else
             return;
     }
-    //×÷Õß×Ô¼ºÉè¼ÆµÄ¼ÆÊ±Àà£¬ÒÔ¹¹Ôìº¯ÊıÎªÆğÊ¼Ê±¼ä£¬ÒÔtoc()º¯ÊıÎªÖÕÖ¹Ê±¼ä£¬²¢·µ»ØÊ±¼ä¼ä¸ô(ms)
-    TicToc t_whole;//¼ÆËãÕû¸ö»Øµ÷º¯ÊıµÄÊ±¼ä
-    TicToc t_prepare;//¼ÆËãÀ×´ïµãÔÆÓĞĞò»¯µÄÊ±¼ä
+    //ä½œè€…è‡ªå·±è®¾è®¡çš„è®¡æ—¶ç±»ï¼Œä»¥æ„é€ å‡½æ•°ä¸ºèµ·å§‹æ—¶é—´ï¼Œä»¥toc()å‡½æ•°ä¸ºç»ˆæ­¢æ—¶é—´ï¼Œå¹¶è¿”å›æ—¶é—´é—´éš”(ms)
+    TicToc t_whole;//è®¡ç®—æ•´ä¸ªå›è°ƒå‡½æ•°çš„æ—¶é—´
+    TicToc t_prepare;//è®¡ç®—é›·è¾¾ç‚¹äº‘æœ‰åºåŒ–çš„æ—¶é—´
 
-    //Ã¿ÌõÀ×´ïÉ¨ÃèÏßÉÏµÄ¿ÉÒÔ¼ÆËãÇúÂÊµÄµãÔÆµãµÄÆğÊ¼Ë÷ÒıºÍ½áÊøË÷Òı£¬·Ö±ğÓÃscanStartIndÊı×éºÍscanEndIndÊı×é¼ÇÂ¼
+    //æ¯æ¡é›·è¾¾æ‰«æçº¿ä¸Šçš„å¯ä»¥è®¡ç®—æ›²ç‡çš„ç‚¹äº‘ç‚¹çš„èµ·å§‹ç´¢å¼•å’Œç»“æŸç´¢å¼•ï¼Œåˆ†åˆ«ç”¨scanStartIndæ•°ç»„å’ŒscanEndIndæ•°ç»„è®°å½•
     std::vector<int> scanStartInd(N_SCANS, 0);
     std::vector<int> scanEndInd(N_SCANS, 0);
 
     pcl::PointCloud<pcl::PointXYZ> laserCloudIn;
-    // °ÑµãÔÆ´Óros¸ñÊ½×ªµ½pclµÄ¸ñÊ½
+    // æŠŠç‚¹äº‘ä»rosæ ¼å¼è½¬åˆ°pclçš„æ ¼å¼
     pcl::fromROSMsg(*laserCloudMsg, laserCloudIn);
     std::vector<int> indices;
 
-    // Ê×ÏÈ¶ÔµãÔÆÂË²¨£¬È¥³ıNaNÖµµÃÎŞĞ§µãÔÆ
+    // é¦–å…ˆå¯¹ç‚¹äº‘æ»¤æ³¢ï¼Œå»é™¤NaNå€¼å¾—æ— æ•ˆç‚¹äº‘
     pcl::removeNaNFromPointCloud(laserCloudIn, laserCloudIn, indices);
-    // È¥³ıÔÚ Lidar ×ø±êÏµÔ­µã MINIMUM_RANGE ¾àÀëÒÔÄÚµÄµã£¬ÕâÀïµ÷ÓÃ×÷ÕßĞ´µÄº¯Êı
+    // å»é™¤åœ¨ Lidar åæ ‡ç³»åŸç‚¹ MINIMUM_RANGE è·ç¦»ä»¥å†…çš„ç‚¹ï¼Œè¿™é‡Œè°ƒç”¨ä½œè€…å†™çš„å‡½æ•°
     removeClosedPointCloud(laserCloudIn, laserCloudIn, MINIMUM_RANGE);//MINIMUM_RANGE = 0.1
 
-    // ¼ÆËãÆğÊ¼µãºÍÖÕÖ¹µã½Ç¶È
-    // ½âÊÍÒ»ÏÂ£ºatan2µÄ·¶Î§ÊÇ[-180,180]£¬atanµÄ·¶Î§ÊÇ[-90,90]
+    // è®¡ç®—èµ·å§‹ç‚¹å’Œç»ˆæ­¢ç‚¹è§’åº¦
+    // è§£é‡Šä¸€ä¸‹ï¼šatan2çš„èŒƒå›´æ˜¯[-180,180]ï¼Œatançš„èŒƒå›´æ˜¯[-90,90]
     /*
-    ÏÂÃæÒª¼ÆËãµãÔÆ½Ç¶È·¶Î§£¬ÊÇÎªÁËÊ¹µãÔÆÓĞĞò£¬ĞèÒª×öµ½Á½¼şÊÂ£º
-        ÎªÃ¿¸öµãÕÒµ½ËüËù¶ÔÓ¦µÄÉ¨ÃèÏß£¨SCAN£©£»
-        ÎªÃ¿ÌõÉ¨ÃèÏßÉÏµÄµã·ÖÅäÊ±¼ä´Á¡£
-    Òª¼ÆËãÃ¿¸öµãµÄÊ±¼ä´Á£¬ Ê×ÏÈÎÒÃÇĞèÒªÈ·¶¨Õâ¸öµãµÄ½Ç¶È·¶Î§¡£
-    ¿ÉÒÔÊ¹ÓÃ<cmath>ÖĞµÄatan2( )º¯Êı¼ÆËãµãÔÆµãµÄË®Æ½½Ç¶È¡£
-
-    Õâ¿éÔÚºóÃæµÄ¼¤¹â¿ò¼Ü»ù±¾¶¼²»ĞèÒªÁË£¬
-    ÒòÎªºóÃæÀ×´ïµÄÇı¶¯½«Ã¿¸öµãµÄÏßºÅ¡¢½Ç¶È¡¢Ê±¼ä´Á¶¼·¢³öÀ´ÁË¡£
-    ËùÒÔËµÕâÒ»¿é¿ÉÒÔÌø¹ı²»¿´¡£
+    ä¸‹é¢è¦è®¡ç®—ç‚¹äº‘è§’åº¦èŒƒå›´ï¼Œæ˜¯ä¸ºäº†ä½¿ç‚¹äº‘æœ‰åºï¼Œéœ€è¦åšåˆ°ä¸¤ä»¶äº‹ï¼š
+        ä¸ºæ¯ä¸ªç‚¹æ‰¾åˆ°å®ƒæ‰€å¯¹åº”çš„æ‰«æçº¿ï¼ˆSCANï¼‰ï¼›
+        ä¸ºæ¯æ¡æ‰«æçº¿ä¸Šçš„ç‚¹åˆ†é…æ—¶é—´æˆ³ã€‚
+    è¦è®¡ç®—æ¯ä¸ªç‚¹çš„æ—¶é—´æˆ³ï¼Œ é¦–å…ˆæˆ‘ä»¬éœ€è¦ç¡®å®šè¿™ä¸ªç‚¹çš„è§’åº¦èŒƒå›´ã€‚
+    å¯ä»¥ä½¿ç”¨<cmath>ä¸­çš„atan2( )å‡½æ•°è®¡ç®—ç‚¹äº‘ç‚¹çš„æ°´å¹³è§’åº¦ã€‚
+    è¿™å—åœ¨åé¢çš„æ¿€å…‰æ¡†æ¶åŸºæœ¬éƒ½ä¸éœ€è¦äº†ï¼Œ
+    å› ä¸ºåé¢é›·è¾¾çš„é©±åŠ¨å°†æ¯ä¸ªç‚¹çš„çº¿å·ã€è§’åº¦ã€æ—¶é—´æˆ³éƒ½å‘å‡ºæ¥äº†ã€‚
+    æ‰€ä»¥è¯´è¿™ä¸€å—å¯ä»¥è·³è¿‡ä¸çœ‹ã€‚
     */
-    // ¼ÆËãÆğÊ¼µãºÍ½áÊøµãµÄ½Ç¶È£¬ÓÉÓÚ¼¤¹âÀ×´ïÊÇË³Ê±ÕëĞı×ª£¬ÕâÀïÈ¡·´¾ÍÏàµ±ÓÚ×ª³ÉÁËÄæÊ±Õë
+    // è®¡ç®—èµ·å§‹ç‚¹å’Œç»“æŸç‚¹çš„è§’åº¦ï¼Œç”±äºæ¿€å…‰é›·è¾¾æ˜¯é¡ºæ—¶é’ˆæ—‹è½¬ï¼Œè¿™é‡Œå–åå°±ç›¸å½“äºè½¬æˆäº†é€†æ—¶é’ˆ
     int cloudSize = laserCloudIn.points.size();
-    float startOri = -atan2(laserCloudIn.points[0].y, laserCloudIn.points[0].x);// µÚÒ»¸öÉ¨ÃèµãµÄ½Ç¶È
+    float startOri = -atan2(laserCloudIn.points[0].y, laserCloudIn.points[0].x);// ç¬¬ä¸€ä¸ªæ‰«æç‚¹çš„è§’åº¦
     /*
-     * atan2()º¯ÊıÊÇatan(y£¬ x)º¯ÊıµÄÔöÇ¿°æ£¬²»½ö¿ÉÒÔÇóÈ¡arctran(y/x)»¹ÄÜ¹»È·¶¨ÏóÏŞ
-     * startOriºÍendOri·Ö±ğÎªÆğÊ¼µãºÍÖÕÖ¹µãµÄ·½Î»½Ç
-     * atan2·¶Î§ÊÇ[-Pi,PI]£¬ÕâÀï¼ÓÉÏ2PIÊÇÎªÁË±£Ö¤ÆğÊ¼µ½½áÊøÏà²î2PI·ûºÏÊµ¼Ê
+     * atan2()å‡½æ•°æ˜¯atan(yï¼Œ x)å‡½æ•°çš„å¢å¼ºç‰ˆï¼Œä¸ä»…å¯ä»¥æ±‚å–arctran(y/x)è¿˜èƒ½å¤Ÿç¡®å®šè±¡é™
+     * startOriå’ŒendOriåˆ†åˆ«ä¸ºèµ·å§‹ç‚¹å’Œç»ˆæ­¢ç‚¹çš„æ–¹ä½è§’
+     * atan2èŒƒå›´æ˜¯[-Pi,PI]ï¼Œè¿™é‡ŒåŠ ä¸Š2PIæ˜¯ä¸ºäº†ä¿è¯èµ·å§‹åˆ°ç»“æŸç›¸å·®2PIç¬¦åˆå®é™…
      */
-    float endOri = -atan2(laserCloudIn.points[cloudSize - 1].y,     // ×îºóÒ»¸öÉ¨ÃèµãµÄ½Ç¶È
+    float endOri = -atan2(laserCloudIn.points[cloudSize - 1].y,     // æœ€åä¸€ä¸ªæ‰«æç‚¹çš„è§’åº¦
                           laserCloudIn.points[cloudSize - 1].x) +
                    2 * M_PI;
 
-    // µ«×ÜÓĞÒ»Ğ©ÀıÍâ£¬±ÈÈçÕâÀï´óÓÚ3PI£¬ºÍĞ¡ÓÚPI£¬¾ÍĞèÒªµ÷Õûµ½ºÏÀí·¶Î§
-    // ×îºóÒ»¸öµãµÄ½Ç¶È - µÚÒ»¸öµãµÄ½Ç¶È> PI
+    // ä½†æ€»æœ‰ä¸€äº›ä¾‹å¤–ï¼Œæ¯”å¦‚è¿™é‡Œå¤§äº3PIï¼Œå’Œå°äºPIï¼Œå°±éœ€è¦è°ƒæ•´åˆ°åˆç†èŒƒå›´
+    // æœ€åä¸€ä¸ªç‚¹çš„è§’åº¦ - ç¬¬ä¸€ä¸ªç‚¹çš„è§’åº¦> PI
     if (endOri - startOri > 3 * M_PI)
     {
         endOri -= 2 * M_PI;
@@ -187,31 +186,31 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
     //printf("[scanRegistration] start Ori %f\n",startOri);
     //printf("[scanRegistration] end Ori %f\n", endOri);
 
-    //¶ÔÃ¿Ò»¸öµã¼ÆËãÆä scanID ºÍ¸Ãµã¶ÔÓ¦µÄÉ¨Ãèµ½µÄÊ±¼ä£¬½«½á¹û·ÅÔÚintensityÖĞ¡£
+    //å¯¹æ¯ä¸€ä¸ªç‚¹è®¡ç®—å…¶ scanID å’Œè¯¥ç‚¹å¯¹åº”çš„æ‰«æåˆ°çš„æ—¶é—´ï¼Œå°†ç»“æœæ”¾åœ¨intensityä¸­ã€‚
 
-    //ÎªµãÔÆµãÕÒµ½¶ÔÓ¦µÄÉ¨ÃèÏßscanID£¬Ã¿ÌõÉ¨ÃèÏß¶¼ÓĞËü¹Ì¶¨µÄ¸©Ñö½Ç£¬
-    //ÎÒÃÇ¿ÉÒÔ¸ù¾İµãÔÆµãµÄ´¹Ö±½Ç¶ÈÎªÆäÑ°ÕÒ¶ÔÓ¦µÄÉ¨ÃèÏß¡£
+    //ä¸ºç‚¹äº‘ç‚¹æ‰¾åˆ°å¯¹åº”çš„æ‰«æçº¿scanIDï¼Œæ¯æ¡æ‰«æçº¿éƒ½æœ‰å®ƒå›ºå®šçš„ä¿¯ä»°è§’ï¼Œ
+    //æˆ‘ä»¬å¯ä»¥æ ¹æ®ç‚¹äº‘ç‚¹çš„å‚ç›´è§’åº¦ä¸ºå…¶å¯»æ‰¾å¯¹åº”çš„æ‰«æçº¿ã€‚
     bool halfPassed = false;
-    int count = cloudSize;  // ËùÓĞµÄµãÊı
+    int count = cloudSize;  // æ‰€æœ‰çš„ç‚¹æ•°
     PointType point;
     std::vector<pcl::PointCloud<PointType>> laserCloudScans(N_SCANS);
 
-    // ±éÀúÃ¿Ò»¸öµã
+    // éå†æ¯ä¸€ä¸ªç‚¹
     for (int i = 0; i < cloudSize; i++)
     {
         point.x = laserCloudIn.points[i].x;
         point.y = laserCloudIn.points[i].y;
         point.z = laserCloudIn.points[i].z;
 
-        //Í¨¹ı¼ÆËã´¹Ö±ÊÓ³¡½ÇÈ·¶¨¼¤¹âµãÔÚÄÄ¸öÉ¨ÃèÏßÉÏ£¨N_SCANSÏß¼¤¹âÀ×´ï£©
+        //é€šè¿‡è®¡ç®—å‚ç›´è§†åœºè§’ç¡®å®šæ¿€å…‰ç‚¹åœ¨å“ªä¸ªæ‰«æçº¿ä¸Šï¼ˆN_SCANSçº¿æ¿€å…‰é›·è¾¾ï¼‰
         float angle = atan(point.z / sqrt(point.x * point.x + point.y * point.y)) * 180 / M_PI;
         int scanID = 0;
 
         if (N_SCANS == 16)
         {
-            // Èç¹ûÊÇ16Ïß¼¤¹âÀ×´ï£¬½áËã³öµÄangleÓ¦¸ÃÔÚ-15~15Ö®¼ä£¬
-            //+-15¡ãµÄ´¹Ö±ÊÓ³¡£¬´¹Ö±½Ç¶È·Ö±æÂÊ2¡ã£¬Ôò-15¡ãÊ±µÄscanID = 0¡£
-            scanID = int((angle + 15) / 2 + 0.5);//+0.5ÊÇÎªÁËÏòÉÏÈ¡Õû
+            // å¦‚æœæ˜¯16çº¿æ¿€å…‰é›·è¾¾ï¼Œç»“ç®—å‡ºçš„angleåº”è¯¥åœ¨-15~15ä¹‹é—´ï¼Œ
+            //+-15Â°çš„å‚ç›´è§†åœºï¼Œå‚ç›´è§’åº¦åˆ†è¾¨ç‡2Â°ï¼Œåˆ™-15Â°æ—¶çš„scanID = 0ã€‚
+            scanID = int((angle + 15) / 2 + 0.5);//+0.5æ˜¯ä¸ºäº†å‘ä¸Šå–æ•´
             if (scanID > (N_SCANS - 1) || scanID < 0)
             {
                 count--;
@@ -248,14 +247,14 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
         }
         //printf("angle %f scanID %d \n", angle, scanID);
 
-        // »ñÈ¡Ã¿Ò»¸öµã¶ÔÓ¦µÄ½Ç¶È
-        float ori = -atan2(point.y, point.x);// Ã¿Ò»¸öµãµÄË®Æ½½Ç¶È
-        // ¸ù¾İÉ¨ÃèÏßÊÇ·ñĞı×ª¹ı°ëÑ¡ÔñÓëÆğÊ¼Î»ÖÃ»¹ÊÇÖÕÖ¹Î»ÖÃ½øĞĞ²îÖµ¼ÆËã£¬
-        //´Ó¶ø½øĞĞ²¹³¥£¬Èç¹û´ËÊ±É¨ÃèÃ»ÓĞ¹ı°ë£¬ÔòhalfPassedÎªfalse
-        if (!halfPassed) // ÅĞ¶Ïµ±Ç°µã¹ıÃ»¹ıÒ»°ë£¨¿ªÊ¼µÄÊ±ºòÊÇÃ»¹ıÒ»°ëµÄ£©
+        // è·å–æ¯ä¸€ä¸ªç‚¹å¯¹åº”çš„è§’åº¦
+        float ori = -atan2(point.y, point.x);// æ¯ä¸€ä¸ªç‚¹çš„æ°´å¹³è§’åº¦
+        // æ ¹æ®æ‰«æçº¿æ˜¯å¦æ—‹è½¬è¿‡åŠé€‰æ‹©ä¸èµ·å§‹ä½ç½®è¿˜æ˜¯ç»ˆæ­¢ä½ç½®è¿›è¡Œå·®å€¼è®¡ç®—ï¼Œ
+        //ä»è€Œè¿›è¡Œè¡¥å¿ï¼Œå¦‚æœæ­¤æ—¶æ‰«ææ²¡æœ‰è¿‡åŠï¼Œåˆ™halfPassedä¸ºfalse
+        if (!halfPassed) // åˆ¤æ–­å½“å‰ç‚¹è¿‡æ²¡è¿‡ä¸€åŠï¼ˆå¼€å§‹çš„æ—¶å€™æ˜¯æ²¡è¿‡ä¸€åŠçš„ï¼‰
         {
-            // È·±£-PI / 2 < ori - startOri < 3 / 2 * PI£¬
-            //Èç¹ûori-startOriĞ¡ÓÚ-0.5pi»ò´óÓÚ1.5pi£¬Ôòµ÷ÕûoriµÄ½Ç¶È
+            // ç¡®ä¿-PI / 2 < ori - startOri < 3 / 2 * PIï¼Œ
+            //å¦‚æœori-startOriå°äº-0.5piæˆ–å¤§äº1.5piï¼Œåˆ™è°ƒæ•´oriçš„è§’åº¦
             if (ori < startOri - M_PI / 2)
             {
                 ori += 2 * M_PI;
@@ -264,15 +263,15 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
             {
                 ori -= 2 * M_PI;
             }
-            //É¨Ãèµã¹ı°ëÔòÉè¶¨halfPassedÎªtrue£¬Èç¹û³¬¹ı180¶È£¬¾ÍËµÃ÷¹ıÁËÒ»°ëÁË
+            //æ‰«æç‚¹è¿‡åŠåˆ™è®¾å®šhalfPassedä¸ºtrueï¼Œå¦‚æœè¶…è¿‡180åº¦ï¼Œå°±è¯´æ˜è¿‡äº†ä¸€åŠäº†
             if (ori - startOri > M_PI)
             {
                 halfPassed = true;
             }
         }
-        else// ºó°ë¶ÎÊ±¼ä
+        else// ååŠæ®µæ—¶é—´
         {
-            // È·±£-PI * 3 / 2 < ori - endOri < PI / 2
+            // ç¡®ä¿-PI * 3 / 2 < ori - endOri < PI / 2
             ori += 2 * M_PI;
             if (ori < endOri - M_PI * 3 / 2)
             {
@@ -284,151 +283,146 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
             }
         }
         /*
-         * relTime ÊÇÒ»¸ö0~1Ö®¼äµÄĞ¡Êı£¬´ú±íÕ¼ÓÃÒ»Ö¡É¨ÃèÊ±¼äµÄ±ÈÀı£¬³ËÒÔÉ¨ÃèÊ±¼äµÃµ½ÕæÊµÉ¨ÃèÊ±¿Ì£¬
-         * scanPeriod É¨ÃèÊ±¼äÄ¬ÈÏÎª0.1s
-         * ½Ç¶ÈµÄ¼ÆËãÊÇÎªÁË¼ÆËãÏà¶ÔÆğÊ¼Ê±¿ÌµÄÊ±¼ä
+         * relTime æ˜¯ä¸€ä¸ª0~1ä¹‹é—´çš„å°æ•°ï¼Œä»£è¡¨å ç”¨ä¸€å¸§æ‰«ææ—¶é—´çš„æ¯”ä¾‹ï¼Œä¹˜ä»¥æ‰«ææ—¶é—´å¾—åˆ°çœŸå®æ‰«ææ—¶åˆ»ï¼Œ
+         * scanPeriod æ‰«ææ—¶é—´é»˜è®¤ä¸º0.1s
+         * è§’åº¦çš„è®¡ç®—æ˜¯ä¸ºäº†è®¡ç®—ç›¸å¯¹èµ·å§‹æ—¶åˆ»çš„æ—¶é—´
          */
-        float relTime = (ori - startOri) / (endOri - startOri);// Ê±¼äÕ¼±È
-        // ÕûÊı²¿·ÖÊÇscanÏßÊøµÄË÷Òı£¬Ğ¡Êı²¿·ÖÊÇÏà¶ÔÆğÊ¼Ê±¿ÌµÄÊ±¼ä
-        point.intensity = scanID + scanPeriod * relTime;// intensity=scanID+µã¶ÔÓ¦µÄÔÚÏßÉÏµÄÊ±¼ä
-        laserCloudScans[scanID].push_back(point); // ¸ù¾İÃ¿ÌõÏßµÄidxËÍÈë¸÷×ÔÊı×é£¬±íÊ¾ÕâÒ»ÌõÉ¨ÃèÏßÉÏµÄµã
+        float relTime = (ori - startOri) / (endOri - startOri);// æ—¶é—´å æ¯”
+        // æ•´æ•°éƒ¨åˆ†æ˜¯scançº¿æŸçš„ç´¢å¼•ï¼Œå°æ•°éƒ¨åˆ†æ˜¯ç›¸å¯¹èµ·å§‹æ—¶åˆ»çš„æ—¶é—´
+        point.intensity = scanID + scanPeriod * relTime;// intensity=scanID+ç‚¹å¯¹åº”çš„åœ¨çº¿ä¸Šçš„æ—¶é—´ scanPeriod = 0.1;
+        laserCloudScans[scanID].push_back(point); // æ ¹æ®æ¯æ¡çº¿çš„idxé€å…¥å„è‡ªæ•°ç»„ï¼Œè¡¨ç¤ºè¿™ä¸€æ¡æ‰«æçº¿ä¸Šçš„ç‚¹
     }
-    // cloudSize ÊÇÓĞĞ§µÄµãÔÆµÄÊıÄ¿
+    // cloudSize æ˜¯æœ‰æ•ˆçš„ç‚¹äº‘çš„æ•°ç›®
     cloudSize = count;
     printf("points size %d \n", cloudSize);
 
-
-
-    // ¼ÇÂ¼16¸öscanµÄÃ¿Ò»¸öµÄ startInd£¬endInd
+    // è®°å½•16ä¸ªscançš„æ¯ä¸€ä¸ªçš„ startIndï¼ŒendInd
     pcl::PointCloud<PointType>::Ptr laserCloud(new pcl::PointCloud<PointType>());
-    // È«²¿¼¯ºÏµ½Ò»¸öµãÔÆÀïÃæÈ¥£¬µ«ÊÇÊ¹ÓÃÁ½¸öÊı×é±ê¼ÇÆğÊ¼ºÍ½á¹û£¬
-    //ÕâÀï·Ö±ğ+5ºÍ-6ÊÇÎªÁË¼ÆËãÇúÂÊ·½±ã
+    // å…¨éƒ¨é›†åˆåˆ°ä¸€ä¸ªç‚¹äº‘é‡Œé¢å»ï¼Œä½†æ˜¯ä½¿ç”¨ä¸¤ä¸ªæ•°ç»„æ ‡è®°èµ·å§‹å’Œç»“æœï¼Œ
+    //è¿™é‡Œåˆ†åˆ«+5å’Œ-6æ˜¯ä¸ºäº†è®¡ç®—æ›²ç‡æ–¹ä¾¿
     for (int i = 0; i < N_SCANS; i++)
     {
-        scanStartInd[i] = laserCloud->size() + 5;// ¼ÇÂ¼Ã¿¸öscanµÄ¿ªÊ¼index£¬ºöÂÔÇ°5¸öµã
+        scanStartInd[i] = laserCloud->size() + 5;// è®°å½•æ¯ä¸ªscançš„å¼€å§‹indexï¼Œå¿½ç•¥å‰5ä¸ªç‚¹
         *laserCloud += laserCloudScans[i];
-        scanEndInd[i] = laserCloud->size() - 6;// ¼ÇÂ¼Ã¿¸öscanµÄ½áÊøindex£¬ºöÂÔºó5¸öµã£¬¿ªÊ¼ºÍ½áÊø´¦µÄµãÔÆscanÈİÒ×²úÉú²»±ÕºÏµÄ¡°½Ó·ì¡±£¬¶ÔÌáÈ¡edge feature²»Àû
+        scanEndInd[i] = laserCloud->size() - 6;// è®°å½•æ¯ä¸ªscançš„ç»“æŸindexï¼Œå¿½ç•¥å5ä¸ªç‚¹ï¼Œå¼€å§‹å’Œç»“æŸå¤„çš„ç‚¹äº‘scanå®¹æ˜“äº§ç”Ÿä¸é—­åˆçš„â€œæ¥ç¼â€ï¼Œå¯¹æå–edge featureä¸åˆ©
     }
-    // ½«Ò»Ö¡ÎŞĞòµãÔÆ×ª»»³ÉÓĞĞòµãÔÆÏûºÄµÄÊ±¼ä£¬ÕâÀïÖ¸µÄÊÇÇ°Ãæ´¦ÀíÀ×´ïÊı¾İµÄÊ±¼ä
+    // å°†ä¸€å¸§æ— åºç‚¹äº‘è½¬æ¢æˆæœ‰åºç‚¹äº‘æ¶ˆè€—çš„æ—¶é—´ï¼Œè¿™é‡ŒæŒ‡çš„æ˜¯å‰é¢å¤„ç†é›·è¾¾æ•°æ®çš„æ—¶é—´
     printf("prepare time %f \n", t_prepare.toc());
-    // ÓĞĞòµØ¼ÆËãÇúÂÊ
-    // ¼ÆËãÃ¿Ò»¸öµãµÄÇúÂÊ£¬ÕâÀïµÄlaserCloudÊÇÓĞĞòµÄµãÔÆ£¬¹Ê¿ÉÒÔÖ±½ÓÕâÑù¼ÆËã
-    // µ«ÊÇÔÚÃ¿ÌõscanµÄ½»½ç´¦¼ÆËãµÃµ½µÄÇúÂÊÊÇ²»×¼È·µÄ£¬Õâ¿ÉÍ¨¹ıscanStartInd[i]¡¢scanEndInd[i]À´Ñ¡È¡
-    for (int i = 5; i < cloudSize - 5; i++)// ºöÂÔÇ°ºóµÄ5¸öµã
+    // æœ‰åºåœ°è®¡ç®—æ›²ç‡
+    // è®¡ç®—æ¯ä¸€ä¸ªç‚¹çš„æ›²ç‡ï¼Œè¿™é‡Œçš„laserCloudæ˜¯æœ‰åºçš„ç‚¹äº‘ï¼Œæ•…å¯ä»¥ç›´æ¥è¿™æ ·è®¡ç®—
+    // ä½†æ˜¯åœ¨æ¯æ¡scançš„äº¤ç•Œå¤„è®¡ç®—å¾—åˆ°çš„æ›²ç‡æ˜¯ä¸å‡†ç¡®çš„ï¼Œè¿™å¯é€šè¿‡scanStartInd[i]ã€scanEndInd[i]æ¥é€‰å–
+    for (int i = 5; i < cloudSize - 5; i++)// å¿½ç•¥å‰åçš„5ä¸ªç‚¹
     {
         float diffX = laserCloud->points[i - 5].x + laserCloud->points[i - 4].x + laserCloud->points[i - 3].x + laserCloud->points[i - 2].x + laserCloud->points[i - 1].x - 10 * laserCloud->points[i].x + laserCloud->points[i + 1].x + laserCloud->points[i + 2].x + laserCloud->points[i + 3].x + laserCloud->points[i + 4].x + laserCloud->points[i + 5].x;
         float diffY = laserCloud->points[i - 5].y + laserCloud->points[i - 4].y + laserCloud->points[i - 3].y + laserCloud->points[i - 2].y + laserCloud->points[i - 1].y - 10 * laserCloud->points[i].y + laserCloud->points[i + 1].y + laserCloud->points[i + 2].y + laserCloud->points[i + 3].y + laserCloud->points[i + 4].y + laserCloud->points[i + 5].y;
         float diffZ = laserCloud->points[i - 5].z + laserCloud->points[i - 4].z + laserCloud->points[i - 3].z + laserCloud->points[i - 2].z + laserCloud->points[i - 1].z - 10 * laserCloud->points[i].z + laserCloud->points[i + 1].z + laserCloud->points[i + 2].z + laserCloud->points[i + 3].z + laserCloud->points[i + 4].z + laserCloud->points[i + 5].z;
 
-        //´æ´¢Ã¿¸öµãµÄÇúÂÊµÄË÷Òı
+        //å­˜å‚¨æ¯ä¸ªç‚¹çš„æ›²ç‡çš„ç´¢å¼•
         /*
-         * cloudSortInd[i] = iÏàµ±ÓÚËùÓĞµãµÄ³õÊ¼×ÔÈ»ĞòÁĞ£¬Ã¿¸öµãµÃµ½Ëü×Ô¼ºµÄĞòºÅ£¨Ë÷Òı£©
-         * ¶ÔÓÚÃ¿¸öµã£¬Ñ¡ÔñÁËËü¸½½üµÄÌØÕ÷µãÊıÁ¿³õÊ¼»¯Îª0£¬
-         * Ã¿¸öµãµÄµãÀàĞÍ³õÊ¼ÉèÖÃÎª0£¨´Î¼«Ğ¡Æ½Ãæµã£©
+         * cloudSortInd[i] = iç›¸å½“äºæ‰€æœ‰ç‚¹çš„åˆå§‹è‡ªç„¶åºåˆ—ï¼Œæ¯ä¸ªç‚¹å¾—åˆ°å®ƒè‡ªå·±çš„åºå·ï¼ˆç´¢å¼•ï¼‰
+         * å¯¹äºæ¯ä¸ªç‚¹ï¼Œé€‰æ‹©äº†å®ƒé™„è¿‘çš„ç‰¹å¾ç‚¹æ•°é‡åˆå§‹åŒ–ä¸º0ï¼Œ
+         * æ¯ä¸ªç‚¹çš„ç‚¹ç±»å‹åˆå§‹è®¾ç½®ä¸º0ï¼ˆæ¬¡æå°å¹³é¢ç‚¹ï¼‰
          */
         cloudCurvature[i] = diffX * diffX + diffY * diffY + diffZ * diffZ;
         cloudSortInd[i] = i;
-        cloudNeighborPicked[i] = 0;// µãÓĞÃ»ÓĞ±»Ñ¡Ñ¡ÔñÎªfeatureµã
+        cloudNeighborPicked[i] = 0;// ç‚¹æœ‰æ²¡æœ‰è¢«é€‰é€‰æ‹©ä¸ºfeatureç‚¹
         cloudLabel[i] = 0;// Label 2: corner_sharp
-        // Label 1: corner_less_sharp, °üº¬Label 2
+        // Label 1: corner_less_sharp, åŒ…å«Label 2
         // Label -1: surf_flat
-        // Label 0: surf_less_flat£¬ °üº¬Label -1£¬ÒòÎªµãÌ«¶à£¬×îºó»á½µ²ÉÑù
+        // Label 0: surf_less_flatï¼Œ åŒ…å«Label -1ï¼Œå› ä¸ºç‚¹å¤ªå¤šï¼Œæœ€åä¼šé™é‡‡æ ·
     }
 
 
 /*
-ÇúÂÊ¼ÆËãÍê³Éºó½øĞĞÌØÕ÷·ÖÀà£¬ÌáÈ¡ÌØÕ÷µãÓĞ¼¸µãÔ­Ôò£º
-
-1.ÎªÁËÌá¸ßĞ§ÂÊ£¬Ã¿ÌõÉ¨ÃèÏß·Ö³É6¸öÉÈÇø£¬ÔÚÃ¿¸öÉÈÇøÄÚ£¬Ñ°ÕÒÇúÂÊ×î´óµÄ20¸öµã£¬
-    ×÷Îª´Î¼«´ó±ßÏßµã£¬ÆäÖĞ×î´óµÄ2¸öµã£¬Í¬Ê±×÷Îª¼«´ó±ßÏßµã£»
-
-2. Ñ°ÕÒÇúÂÊ×îĞ¡µÄ4¸öµã£¬×÷Îª¼«Ğ¡Æ½Ãæµã£¬Ê£ÏÂÎ´±»±ê¼ÇµÄµã£¬È«²¿×÷Îª´Î¼«Ğ¡Æ½Ãæµã¡£
-
-3. ÎªÁË·ÀÖ¹ÌØÕ÷µã¹ı¶à¾Û¶Ñ£¬Ã¿ÌáÈ¡Ò»¸öÌØÕ÷µã£¨¼«´ó/´Î¼«´ó±ßÏßµã£¬¼«Ğ¡Æ½Ãæµã£©£¬
-    ¶¼Òª½«Õâ¸öµãºÍËü¸½½üµÄµãÈ«¶¼±ê¼ÇÎª¡°ÒÑÑ¡ÖĞ¡±£¬ÔÚÏÂ´ÎÌáÈ¡ÌØÕ÷µãÊ±£¬½«»áÌø¹ıÕâĞ©µã¡£
-    ¶ÔÓÚ´Î¼«Ğ¡Æ½Ãæµã£¬²ÉÈ¡½µ²ÉÑùµÄ·½·¨±ÜÃâ¹ı¶à¾Û¶Ñ¡£
+æ›²ç‡è®¡ç®—å®Œæˆåè¿›è¡Œç‰¹å¾åˆ†ç±»ï¼Œæå–ç‰¹å¾ç‚¹æœ‰å‡ ç‚¹åŸåˆ™ï¼š
+1.ä¸ºäº†æé«˜æ•ˆç‡ï¼Œæ¯æ¡æ‰«æçº¿åˆ†æˆ6ä¸ªæ‰‡åŒºï¼Œåœ¨æ¯ä¸ªæ‰‡åŒºå†…ï¼Œå¯»æ‰¾æ›²ç‡æœ€å¤§çš„20ä¸ªç‚¹ï¼Œ
+    ä½œä¸ºæ¬¡æå¤§è¾¹çº¿ç‚¹ï¼Œå…¶ä¸­æœ€å¤§çš„2ä¸ªç‚¹ï¼ŒåŒæ—¶ä½œä¸ºæå¤§è¾¹çº¿ç‚¹ï¼›
+2. å¯»æ‰¾æ›²ç‡æœ€å°çš„4ä¸ªç‚¹ï¼Œä½œä¸ºæå°å¹³é¢ç‚¹ï¼Œå‰©ä¸‹æœªè¢«æ ‡è®°çš„ç‚¹ï¼Œå…¨éƒ¨ä½œä¸ºæ¬¡æå°å¹³é¢ç‚¹ã€‚
+3. ä¸ºäº†é˜²æ­¢ç‰¹å¾ç‚¹è¿‡å¤šèšå †ï¼Œæ¯æå–ä¸€ä¸ªç‰¹å¾ç‚¹ï¼ˆæå¤§/æ¬¡æå¤§è¾¹çº¿ç‚¹ï¼Œæå°å¹³é¢ç‚¹ï¼‰ï¼Œ
+    éƒ½è¦å°†è¿™ä¸ªç‚¹å’Œå®ƒé™„è¿‘çš„ç‚¹å…¨éƒ½æ ‡è®°ä¸ºâ€œå·²é€‰ä¸­â€ï¼Œåœ¨ä¸‹æ¬¡æå–ç‰¹å¾ç‚¹æ—¶ï¼Œå°†ä¼šè·³è¿‡è¿™äº›ç‚¹ã€‚
+    å¯¹äºæ¬¡æå°å¹³é¢ç‚¹ï¼Œé‡‡å–é™é‡‡æ ·çš„æ–¹æ³•é¿å…è¿‡å¤šèšå †ã€‚
 */
-    TicToc t_pts;//¼ÆËãÌØÕ÷ÌáÈ¡µÄÊ±¼ä
-    pcl::PointCloud<PointType> cornerPointsSharp;// ¼«´ó±ßÏßµã
-    pcl::PointCloud<PointType> cornerPointsLessSharp;// ´Î¼«´ó±ßÏßµã
-    pcl::PointCloud<PointType> surfPointsFlat;// ¼«Ğ¡Æ½Ãæµã
-    pcl::PointCloud<PointType> surfPointsLessFlat;// ´Î¼«Ğ¡Æ½Ãæ
-    // ÌáÈ¡ÌØÕ÷µã
-    float t_q_sort = 0;// ÓÃÀ´¼ÇÂ¼ÅÅĞò»¨·ÑµÄ×ÜÊ±¼ä
+    TicToc t_pts;//è®¡ç®—ç‰¹å¾æå–çš„æ—¶é—´
+    pcl::PointCloud<PointType> cornerPointsSharp;// æå¤§è¾¹çº¿ç‚¹
+    pcl::PointCloud<PointType> cornerPointsLessSharp;// æ¬¡æå¤§è¾¹çº¿ç‚¹
+    pcl::PointCloud<PointType> surfPointsFlat;// æå°å¹³é¢ç‚¹
+    pcl::PointCloud<PointType> surfPointsLessFlat;// æ¬¡æå°å¹³é¢ç‚¹
+    // æå–ç‰¹å¾ç‚¹
+    float t_q_sort = 0;// ç”¨æ¥è®°å½•æ’åºèŠ±è´¹çš„æ€»æ—¶é—´
 
-    // ±éÀúÃ¿¸öscan£¬¶ÔÃ¿ÌõÏß½øĞĞ²Ù×÷£¨ÇúÂÊÅÅĞò£¬Ñ¡È¡¶ÔÓ¦ÌØÕ÷µã£©
-    for (int i = 0; i < N_SCANS; i++)// °´ÕÕscanµÄË³ĞòÌáÈ¡4ÖÖÌØÕ÷µã
+    // éå†æ¯ä¸ªscanï¼Œå¯¹æ¯æ¡çº¿è¿›è¡Œæ“ä½œï¼ˆæ›²ç‡æ’åºï¼Œé€‰å–å¯¹åº”ç‰¹å¾ç‚¹ï¼‰
+    for (int i = 0; i < N_SCANS; i++)// æŒ‰ç…§scançš„é¡ºåºæå–4ç§ç‰¹å¾ç‚¹
     {
-        // Èç¹û×îºóÒ»¸ö¿ÉËãÇúÂÊµÄµãÓëµÚÒ»¸öµÄÊıÁ¿²îĞ¡ÓÚ6£¬ËµÃ÷ÎŞ·¨·Ö³É6¸öÉÈÇø£¬Ìø¹ı
-        if( scanEndInd[i] - scanStartInd[i] < 6)// Èç¹û¸ÃscanxÏßµÄµãÊıÉÙÓÚ7¸öµã£¬¾ÍÌø¹ı
+        // å¦‚æœæœ€åä¸€ä¸ªå¯ç®—æ›²ç‡çš„ç‚¹ä¸ç¬¬ä¸€ä¸ªçš„æ•°é‡å·®å°äº6ï¼Œè¯´æ˜æ— æ³•åˆ†æˆ6ä¸ªæ‰‡åŒºï¼Œè·³è¿‡
+        if( scanEndInd[i] - scanStartInd[i] < 6)// å¦‚æœè¯¥scanxçº¿çš„ç‚¹æ•°å°‘äº7ä¸ªç‚¹ï¼Œå°±è·³è¿‡
             continue;
-        // ÓÃÀ´´æ´¢´Î¼«Ğ¡Æ½Ãæµã£¬ºóÃæ»á½øĞĞ½µ²ÉÑù
+        // ç”¨æ¥å­˜å‚¨æ¬¡æå°å¹³é¢ç‚¹ï¼Œåé¢ä¼šè¿›è¡Œé™é‡‡æ ·
         pcl::PointCloud<PointType>::Ptr surfPointsLessFlatScan(new pcl::PointCloud<PointType>);
-        //ÎªÁËÊ¹ÌØÕ÷µã¾ùÔÈ·Ö²¼£¬½«Ò»¸öscanÏß·Ö³É6¸öÉÈÇø
-        for (int j = 0; j < 6; j++)// ½«¸Ã scan Ïß·Ö³É6Ğ¡¶ÎÖ´ĞĞÌØÕ÷¼ì²â
+        //ä¸ºäº†ä½¿ç‰¹å¾ç‚¹å‡åŒ€åˆ†å¸ƒï¼Œå°†ä¸€ä¸ªscançº¿åˆ†æˆ6ä¸ªæ‰‡åŒº
+        for (int j = 0; j < 6; j++)// å°†è¯¥ scan çº¿åˆ†æˆ6å°æ®µæ‰§è¡Œç‰¹å¾æ£€æµ‹
         {
-            // Ã¿¸öµÈ·ÖµÄÆğÊ¼ºÍ½áÊøµã
-            int sp = scanStartInd[i] + (scanEndInd[i] - scanStartInd[i]) * j / 6;// subscanµÄÆğÊ¼index
-            int ep = scanStartInd[i] + (scanEndInd[i] - scanStartInd[i]) * (j + 1) / 6 - 1;// subscanµÄ½áÊøindex
+            // æ¯ä¸ªç­‰åˆ†çš„èµ·å§‹å’Œç»“æŸç‚¹
+            int sp = scanStartInd[i] + (scanEndInd[i] - scanStartInd[i]) * j / 6;// subscançš„èµ·å§‹index
+            int ep = scanStartInd[i] + (scanEndInd[i] - scanStartInd[i]) * (j + 1) / 6 - 1;// subscançš„ç»“æŸindex
 
-            TicToc t_tmp;//¼ÆËãÅÅĞòÊ±¼ä
-            // ¶ÔµãÔÆ°´ÕÕÇúÂÊ½øĞĞÉıĞòÅÅĞò£¬Ğ¡µÄÔÚÇ°£¬´óµÄÔÚºó
+            TicToc t_tmp;//è®¡ç®—æ’åºæ—¶é—´
+            // å¯¹ç‚¹äº‘æŒ‰ç…§æ›²ç‡è¿›è¡Œå‡åºæ’åºï¼Œå°çš„åœ¨å‰ï¼Œå¤§çš„åœ¨å
             std::sort (cloudSortInd + sp, cloudSortInd + ep + 1, comp);
-            // t_q_sortÀÛ¼ÆÃ¿¸öÉÈÇøÇúÂÊÅÅĞòÊ±¼ä×ÜºÍ
+            // t_q_sortç´¯è®¡æ¯ä¸ªæ‰‡åŒºæ›²ç‡æ’åºæ—¶é—´æ€»å’Œ
             t_q_sort += t_tmp.toc();
 
-            // Ñ¡È¡¼«´ó±ßÏßµã£¨2¸ö£©ºÍ´Î¼«´ó±ßÏßµã£¨20¸ö£©
+            // é€‰å–æå¤§è¾¹çº¿ç‚¹ï¼ˆ2ä¸ªï¼‰å’Œæ¬¡æå¤§è¾¹çº¿ç‚¹ï¼ˆ20ä¸ªï¼‰
             int largestPickedNum = 0;
-            // ÌôÑ¡ÇúÂÊ±È½Ï´óµÄ²¿·Ö£¬´Ó×î´óÇúÂÊÍù×îĞ¡ÇúÂÊ±éÀú£¬Ñ°ÕÒ±ßÏßµã£¬²¢ÒªÇó´óÓÚ0.1
-            for (int k = ep; k >= sp; k--)// ´ÓºóÍùÇ°£¬¼´´ÓÇúÂÊ´óµÄµã¿ªÊ¼ÌáÈ¡corner feature
+            // æŒ‘é€‰æ›²ç‡æ¯”è¾ƒå¤§çš„éƒ¨åˆ†ï¼Œä»æœ€å¤§æ›²ç‡å¾€æœ€å°æ›²ç‡éå†ï¼Œå¯»æ‰¾è¾¹çº¿ç‚¹ï¼Œå¹¶è¦æ±‚å¤§äº0.1
+            for (int k = ep; k >= sp; k--)// ä»åå¾€å‰ï¼Œå³ä»æ›²ç‡å¤§çš„ç‚¹å¼€å§‹æå–corner feature
             {
-                // ÅÅĞòºóË³Ğò¾ÍÂÒÁË£¬Õâ¸öÊ±ºòË÷ÒıµÄ×÷ÓÃ¾ÍÌåÏÖ³öÀ´ÁË
+                // æ’åºåé¡ºåºå°±ä¹±äº†ï¼Œè¿™ä¸ªæ—¶å€™ç´¢å¼•çš„ä½œç”¨å°±ä½“ç°å‡ºæ¥äº†
                 int ind = cloudSortInd[k];
 
-                // ¿´¿´Õâ¸öµãÊÇ·ñÊÇÓĞĞ§µã£¬Í¬Ê±ÇúÂÊÊÇ·ñ´óÓÚãĞÖµ£¬¼´Ã»±»Ñ¡¹ı && ÇúÂÊ > 0.1
+                // çœ‹çœ‹è¿™ä¸ªç‚¹æ˜¯å¦æ˜¯æœ‰æ•ˆç‚¹ï¼ŒåŒæ—¶æ›²ç‡æ˜¯å¦å¤§äºé˜ˆå€¼ï¼Œå³æ²¡è¢«é€‰è¿‡ && æ›²ç‡ > 0.1
                 if (cloudNeighborPicked[ind] == 0 &&
-                    cloudCurvature[ind] > 0.1)// Èç¹û¸ÃµãÃ»ÓĞ±»Ñ¡Ôñ¹ı£¬²¢ÇÒÇúÂÊ´óÓÚ0.1
+                    cloudCurvature[ind] > 0.1)// å¦‚æœè¯¥ç‚¹æ²¡æœ‰è¢«é€‰æ‹©è¿‡ï¼Œå¹¶ä¸”æ›²ç‡å¤§äº0.1
                 {
                     largestPickedNum++;
-                    // Ã¿¶ÎÑ¡2¸öÇúÂÊ´óµÄµã
-                    if (largestPickedNum <= 2)// ¸Ã subscan ÖĞÇúÂÊ×î´óµÄÇ°2¸öµãÈÏÎªÊÇ corner_sharp ÌØÕ÷µã
+                    // æ¯æ®µé€‰2ä¸ªæ›²ç‡å¤§çš„ç‚¹
+                    if (largestPickedNum <= 2)// è¯¥ subscan ä¸­æ›²ç‡æœ€å¤§çš„å‰2ä¸ªç‚¹è®¤ä¸ºæ˜¯ corner_sharp ç‰¹å¾ç‚¹
                     {
-                        // label Îª2ÊÇÇúÂÊ´óµÄ±ê¼Ç£¬¼´ÉèÖÃ±êÇ©Îª¼«´ó±ßÏßµã
+                        // label ä¸º2æ˜¯æ›²ç‡å¤§çš„æ ‡è®°ï¼Œå³è®¾ç½®æ ‡ç­¾ä¸ºæå¤§è¾¹çº¿ç‚¹
                         cloudLabel[ind] = 2;
-                        // cornerPointsSharpÓÃÀ´´æ·Å´óÇúÂÊµÄµã£¬¼È·ÅÈë¼«´ó±ßÏßµã£¬Ò²·ÅÈë´Î¼«´ó±ßÏßµã
+                        // cornerPointsSharpç”¨æ¥å­˜æ”¾å¤§æ›²ç‡çš„ç‚¹ï¼Œæ—¢æ”¾å…¥æå¤§è¾¹çº¿ç‚¹ï¼Œä¹Ÿæ”¾å…¥æ¬¡æå¤§è¾¹çº¿ç‚¹
                         cornerPointsSharp.push_back(laserCloud->points[ind]);
                         cornerPointsLessSharp.push_back(laserCloud->points[ind]);
                     }
-                        // ÒÔ¼°20¸öÇúÂÊÉÔÎ¢´óÒ»Ğ©µÄµã
-                    else if (largestPickedNum <= 20)// ¸ÃsubscanÖĞÇúÂÊ×î´óµÄÇ°20¸öµãÈÏÎªÊÇcorner_less_sharpÌØÕ÷µã
+                        // ä»¥åŠ20ä¸ªæ›²ç‡ç¨å¾®å¤§ä¸€äº›çš„ç‚¹
+                    else if (largestPickedNum <= 20)// è¯¥subscanä¸­æ›²ç‡æœ€å¤§çš„å‰20ä¸ªç‚¹è®¤ä¸ºæ˜¯corner_less_sharpç‰¹å¾ç‚¹
                     {
-                        // labelÖÃ1±íÊ¾ÇúÂÊÉÔÎ¢´óÒ»Ğ©£¬³¬¹ı2¸öÑ¡ÔñµãÒÔºó£¬ÉèÖÃÎª´Î¼«´ó±ßÏßµã£¬·ÅÈë´Î¼«´ó±ßÏßµãÈİÆ÷
+                        // labelç½®1è¡¨ç¤ºæ›²ç‡ç¨å¾®å¤§ä¸€äº›ï¼Œè¶…è¿‡2ä¸ªé€‰æ‹©ç‚¹ä»¥åï¼Œè®¾ç½®ä¸ºæ¬¡æå¤§è¾¹çº¿ç‚¹ï¼Œæ”¾å…¥æ¬¡æå¤§è¾¹çº¿ç‚¹å®¹å™¨
                         cloudLabel[ind] = 1;
                         cornerPointsLessSharp.push_back(laserCloud->points[ind]);
                     }
-                        // ³¬¹ı20¸ö¾ÍÌø¹ı
+                        // è¶…è¿‡20ä¸ªå°±è·³è¿‡
                     else
                     {
                         break;
                     }
-                    // Õâ¸öµã±»Ñ¡ÖĞºópick±êÖ¾Î»ÖÃ1 £¬¼ÇÂ¼Õâ¸öµãÒÑ¾­±»Ñ¡ÔñÁË
-                    cloudNeighborPicked[ind] = 1;// ±ê¼Ç¸Ãµã±»Ñ¡Ôñ¹ıÁË
+                    // è¿™ä¸ªç‚¹è¢«é€‰ä¸­åpickæ ‡å¿—ä½ç½®1 ï¼Œè®°å½•è¿™ä¸ªç‚¹å·²ç»è¢«é€‰æ‹©äº†
+                    cloudNeighborPicked[ind] = 1;// æ ‡è®°è¯¥ç‚¹è¢«é€‰æ‹©è¿‡äº†
 
-                    // Óëµ±Ç°µã¾àÀëµÄÆ½·½ <= 0.05µÄµã±ê¼ÇÎªÑ¡Ôñ¹ı£¬±ÜÃâÌØÕ÷µãÃÜ¼¯·Ö²¼
-                    // ÎªÁË±£Ö¤ÌØÕ÷µã²»¹ı¶È¼¯ÖĞ£¬½«Ñ¡ÖĞµÄµãÖÜÎ§5¸öµã¶¼ÖÃ1,±ÜÃâºóĞø»áÑ¡µ½
+                    // ä¸å½“å‰ç‚¹è·ç¦»çš„å¹³æ–¹ <= 0.05çš„ç‚¹æ ‡è®°ä¸ºé€‰æ‹©è¿‡ï¼Œé¿å…ç‰¹å¾ç‚¹å¯†é›†åˆ†å¸ƒ
+                    // ä¸ºäº†ä¿è¯ç‰¹å¾ç‚¹ä¸è¿‡åº¦é›†ä¸­ï¼Œå°†é€‰ä¸­çš„ç‚¹å‘¨å›´5ä¸ªç‚¹éƒ½ç½®1,é¿å…åç»­ä¼šé€‰åˆ°
                     for (int l = 1; l <= 5; l++)
                     {
-                        // ²é¿´ÏàÁÚµã¾àÀëÊÇ·ñ²îÒì¹ı´ó£¬Èç¹û²îÒì¹ı´óËµÃ÷µãÔÆÔÚ´Ë²»Á¬Ğø£¬
-                        // ÊÇÌØÕ÷±ßÔµ£¬¾Í»áÊÇĞÂµÄÌØÕ÷£¬Òò´Ë¾Í²»ÖÃÎ»ÁË
+                        // æŸ¥çœ‹ç›¸é‚»ç‚¹è·ç¦»æ˜¯å¦å·®å¼‚è¿‡å¤§ï¼Œå¦‚æœå·®å¼‚è¿‡å¤§è¯´æ˜ç‚¹äº‘åœ¨æ­¤ä¸è¿ç»­ï¼Œ
+                        // æ˜¯ç‰¹å¾è¾¹ç¼˜ï¼Œå°±ä¼šæ˜¯æ–°çš„ç‰¹å¾ï¼Œå› æ­¤å°±ä¸ç½®ä½äº†
                         float diffX = laserCloud->points[ind + l].x - laserCloud->points[ind + l - 1].x;
                         float diffY = laserCloud->points[ind + l].y - laserCloud->points[ind + l - 1].y;
                         float diffZ = laserCloud->points[ind + l].z - laserCloud->points[ind + l - 1].z;
-                        // ÏàÁÚscanµã¾àÀëµÄÆ½·½ <= 0.05µÄµã±ê¼ÇÎªÑ¡Ôñ¹ı£¬±ÜÃâÌØÕ÷µãÃÜ¼¯·Ö²¼
+                        // ç›¸é‚»scanç‚¹è·ç¦»çš„å¹³æ–¹ <= 0.05çš„ç‚¹æ ‡è®°ä¸ºé€‰æ‹©è¿‡ï¼Œé¿å…ç‰¹å¾ç‚¹å¯†é›†åˆ†å¸ƒ
                         if (diffX * diffX + diffY * diffY + diffZ * diffZ > 0.05)
                         {
                             break;
                         }
-                        // ÓëÁÙ½üµãµÄ¾àÀëµÄÆ½·½ <= 0.05µÄµã±ê¼ÇÎªÑ¡Ôñ¹ı£¬±ÜÃâÌØÕ÷µãÃÜ¼¯·Ö²¼£¬Ô½ÍùÉÏscanIDÔ½´óÔ½Ô¶£¬ËùÒÔ¿ÉÒÔÖ±½Óbreak
+                        // ä¸ä¸´è¿‘ç‚¹çš„è·ç¦»çš„å¹³æ–¹ <= 0.05çš„ç‚¹æ ‡è®°ä¸ºé€‰æ‹©è¿‡ï¼Œé¿å…ç‰¹å¾ç‚¹å¯†é›†åˆ†å¸ƒï¼Œè¶Šå¾€ä¸ŠscanIDè¶Šå¤§è¶Šè¿œï¼Œæ‰€ä»¥å¯ä»¥ç›´æ¥break
                         cloudNeighborPicked[ind + l] = 1;
                     }
                     for (int l = -1; l >= -5; l--)
@@ -445,21 +439,21 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
                     }
                 }
             }
-            // ÏÂÃæ¿ªÊ¼ÌôÑ¡Ãæµã£¬Ñ¡È¡¼«Ğ¡Æ½Ãæµã£¨4¸ö£©
-            // ÌáÈ¡surfÆ½Ãæfeature£¬ÓëÉÏÊöÀàËÆ£¬Ñ¡È¡¸ÃsubscanÇúÂÊ×îĞ¡µÄÇ°4¸öµãÎªsurf_flat
+            // ä¸‹é¢å¼€å§‹æŒ‘é€‰é¢ç‚¹ï¼Œé€‰å–æå°å¹³é¢ç‚¹ï¼ˆ4ä¸ªï¼‰
+            // æå–surfå¹³é¢featureï¼Œä¸ä¸Šè¿°ç±»ä¼¼ï¼Œé€‰å–è¯¥subscanæ›²ç‡æœ€å°çš„å‰4ä¸ªç‚¹ä¸ºsurf_flat
             int smallestPickedNum = 0;
-            for (int k = sp; k <= ep; k++) // Ñ°ÕÒÆ½µÄ£¬ÇúÂÊÓÉĞ¡µ½´óÅÅĞò
+            for (int k = sp; k <= ep; k++) // å¯»æ‰¾å¹³çš„ï¼Œæ›²ç‡ç”±å°åˆ°å¤§æ’åº
             {
                 int ind = cloudSortInd[k];
-                // ÅĞ¶ÏÊÇ·ñÂú×ãÆ½ÃæµãµÄÌõ¼ş
-                // È·±£Õâ¸öµãÃ»ÓĞ±»pickÇÒÇúÂÊĞ¡ÓÚãĞÖµ
+                // åˆ¤æ–­æ˜¯å¦æ»¡è¶³å¹³é¢ç‚¹çš„æ¡ä»¶
+                // ç¡®ä¿è¿™ä¸ªç‚¹æ²¡æœ‰è¢«pickä¸”æ›²ç‡å°äºé˜ˆå€¼
                 if (cloudNeighborPicked[ind] == 0 &&
                     cloudCurvature[ind] < 0.1)
                 {
-                    // -1ÈÏÎªÊÇÆ½Ì¹µÄµã
+                    // -1è®¤ä¸ºæ˜¯å¹³å¦çš„ç‚¹
                     cloudLabel[ind] = -1;
                     surfPointsFlat.push_back(laserCloud->points[ind]);
-                    // ÕâÀï²»Çø·ÖÆ½Ì¹ºÍ±È½ÏÆ½Ì¹£¬ÒòÎªÊ£ÏÂµÄµãlabelÄ¬ÈÏÊÇ0,¾ÍÊÇ±È½ÏÆ½Ì¹
+                    // è¿™é‡Œä¸åŒºåˆ†å¹³å¦å’Œæ¯”è¾ƒå¹³å¦ï¼Œå› ä¸ºå‰©ä¸‹çš„ç‚¹labelé»˜è®¤æ˜¯0,å°±æ˜¯æ¯”è¾ƒå¹³å¦
                     smallestPickedNum++;
                     if (smallestPickedNum >= 4)
                     {
@@ -467,7 +461,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
                     }
 
                     cloudNeighborPicked[ind] = 1;
-                    // ¸ù¾İscanIDÍùÉÏ²éÕÒ£¬·ÀÖ¹¹Ø¼üµãÃÜ¼¯
+                    // æ ¹æ®scanIDå¾€ä¸ŠæŸ¥æ‰¾ï¼Œé˜²æ­¢å…³é”®ç‚¹å¯†é›†
                     for (int l = 1; l <= 5; l++)
                     {
                         float diffX = laserCloud->points[ind + l].x - laserCloud->points[ind + l - 1].x;
@@ -496,8 +490,8 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
             }
 
 
-            // ÆäËûµÄ·ÇcornerÌØÕ÷µãÓësurf_flatÌØÕ÷µãÒ»Æğ×é³Ésurf_less_flatÌØÕ÷µã
-            // Ñ¡È¡´Î¼«Ğ¡Æ½Ãæµã£¬³ıÁË¼«Ğ¡Æ½Ãæµã£¬Ê£ÏÂµÄ¶¼ÊÇ´Î¼«Ğ¡Æ½Ãæµã
+            // å…¶ä»–çš„écornerç‰¹å¾ç‚¹ä¸surf_flatç‰¹å¾ç‚¹ä¸€èµ·ç»„æˆsurf_less_flatç‰¹å¾ç‚¹
+            // é€‰å–æ¬¡æå°å¹³é¢ç‚¹ï¼Œé™¤äº†æå°å¹³é¢ç‚¹ï¼Œå‰©ä¸‹çš„éƒ½æ˜¯æ¬¡æå°å¹³é¢ç‚¹
             for (int k = sp; k <= ep; k++)
             {
                 if (cloudLabel[k] <= 0)
@@ -507,7 +501,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
             }
         }
 
-        // ×îºó¶Ô¸Ã scan µãÔÆÖĞÌáÈ¡µÄËùÓĞ surf_less_flat ÌØÕ÷µã½øĞĞ½µ²ÉÑù£¬ÒòÎªµãÌ«¶àÁË
+        // æœ€åå¯¹è¯¥ scan ç‚¹äº‘ä¸­æå–çš„æ‰€æœ‰ surf_less_flat ç‰¹å¾ç‚¹è¿›è¡Œé™é‡‡æ ·ï¼Œå› ä¸ºç‚¹å¤ªå¤šäº†
         pcl::PointCloud<PointType> surfPointsLessFlatScanDS;
         pcl::VoxelGrid<PointType> downSizeFilter;
         downSizeFilter.setInputCloud(surfPointsLessFlatScan);
@@ -520,10 +514,10 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
     printf("seperate points time %f \n", t_pts.toc());
 
 
-    sensor_msgs::PointCloud2 laserCloudOutMsg;// ´´½¨publish msgÊµÀı
-    pcl::toROSMsg(*laserCloud, laserCloudOutMsg);// ÓĞĞòµãÔÆ×ª»¯Îªmsg
-    laserCloudOutMsg.header.stamp = laserCloudMsg->header.stamp;// Ê±¼ä´Á±£³Ö²»±ä
-    laserCloudOutMsg.header.frame_id = "/camera_init"; // frame_idÃû×Ö£¬×ø±êÏµ
+    sensor_msgs::PointCloud2 laserCloudOutMsg;// åˆ›å»ºpublish msgå®ä¾‹
+    pcl::toROSMsg(*laserCloud, laserCloudOutMsg);// æœ‰åºç‚¹äº‘è½¬åŒ–ä¸ºmsg
+    laserCloudOutMsg.header.stamp = laserCloudMsg->header.stamp;// æ—¶é—´æˆ³ä¿æŒä¸å˜
+    laserCloudOutMsg.header.frame_id = "/camera_init"; // frame_idåå­—ï¼Œåæ ‡ç³»
     pubLaserCloud.publish(laserCloudOutMsg);
 
     sensor_msgs::PointCloud2 cornerPointsSharpMsg;
@@ -551,7 +545,7 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
     pubSurfPointsLessFlat.publish(surfPointsLessFlat2);
 
     // pub each scam
-    // ¿ÉÒÔ°´ÕÕÃ¿¸öscan·¢³öÈ¥£¬²»¹ıÕâÀïÊÇfalse
+    // å¯ä»¥æŒ‰ç…§æ¯ä¸ªscanå‘å‡ºå»ï¼Œä¸è¿‡è¿™é‡Œæ˜¯false
     if(PUB_EACH_LINE)
     {
         for(int i = 0; i< N_SCANS; i++)
@@ -571,28 +565,28 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "scanRegistration"); //½ÚµãÃû³Æ
-    ros::NodeHandle nh; //×¢²áROS¾ä±ú
+    ros::init(argc, argv, "scanRegistration"); //èŠ‚ç‚¹åç§°
+    ros::NodeHandle nh; //æ³¨å†ŒROSå¥æŸ„
 
-    //´ÓlaunchÎÄ¼ş²ÎÊı·şÎñÆ÷ÖĞ»ñÈ¡¶àÉÙÏßµÄ¼¤¹âÀ×´ï£¬Èç¹ûÃ»ÓĞÔòÄ¬ÈÏ16Ïß
+    //ä»launchæ–‡ä»¶å‚æ•°æœåŠ¡å™¨ä¸­è·å–å¤šå°‘çº¿çš„æ¿€å…‰é›·è¾¾ï¼Œå¦‚æœæ²¡æœ‰åˆ™é»˜è®¤16çº¿
     nh.param<int>("scan_line", N_SCANS, 16);
 
-    // ´ÓlaunchÎÄ¼ş²ÎÊı·şÎñÆ÷ÖĞ»ñÈ¡¼¤¹âÀ×´ïµÄ×îĞ¡É¨Ãè¾àÀëMINIMUM_RANGE£¬
-    //Ğ¡ÓÚ MINIMUM_RANGE µÄµã½«±»ÂË³ı£¬µ¥Î»ÎªM£¬Èç¹ûÃ»ÓĞÔòÄ¬ÈÏ0.1¡£
+    // ä»launchæ–‡ä»¶å‚æ•°æœåŠ¡å™¨ä¸­è·å–æ¿€å…‰é›·è¾¾çš„æœ€å°æ‰«æè·ç¦»MINIMUM_RANGEï¼Œ
+    //å°äº MINIMUM_RANGE çš„ç‚¹å°†è¢«æ»¤é™¤ï¼Œå•ä½ä¸ºMï¼Œå¦‚æœæ²¡æœ‰åˆ™é»˜è®¤0.1ã€‚
     nh.param<double>("minimum_range", MINIMUM_RANGE, 0.1);
 
     printf("scan line number %d \n", N_SCANS);
-
-    // Ö»ÓĞÏßÊøÊÇ16¡¢32¡¢64µÄ²Å¿ÉÒÔ¼ÌĞø
+                                                                                                                                                           
+    // åªæœ‰çº¿æŸæ˜¯16ã€32ã€64çš„æ‰å¯ä»¥ç»§ç»­
     if(N_SCANS != 16 && N_SCANS != 32 && N_SCANS != 64)
     {
         printf("only support velodyne with 16, 32 or 64 scan line!");
         return 0;
     }
-    // ¶©ÔÄ³õÊ¼µÄ¼¤¹âÀ×´ïÊı¾İ£¬²¢×¢²á»Øµ÷º¯ÊılaserCloudHandler
+    // è®¢é˜…åˆå§‹çš„æ¿€å…‰é›·è¾¾æ•°æ®ï¼Œå¹¶æ³¨å†Œå›è°ƒå‡½æ•°laserCloudHandler
     ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/velodyne_points", 100, laserCloudHandler);// TODO_czy   nsh_indoor_outdoor.bag
     //ros::Subscriber subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/rslidar_points", 100, laserCloudHandler);// TODO_czy   nsh_indoor_outdoor.bag
-    // ·¢²¼»°Ìâ£ºÓĞĞòµãÔÆ£¨É¾³ı¹ı½üµã¡¢ÉèÖÃË÷Òı£©£¬¼«´ó±ßÏßµã¼¯ºÏ£¬´Î¼«´ó±ßÏßµã¼¯ºÏ£¬¼«Ğ¡Æ½Ãæµã¼¯ºÏ£¬´Î¼«Ğ¡Æ½Ãæµã¼¯ºÏ,É¾³ıµÄµãÔÆ
+    // å‘å¸ƒè¯é¢˜ï¼šæœ‰åºç‚¹äº‘ï¼ˆåˆ é™¤è¿‡è¿‘ç‚¹ã€è®¾ç½®ç´¢å¼•ï¼‰ï¼Œæå¤§è¾¹çº¿ç‚¹é›†åˆï¼Œæ¬¡æå¤§è¾¹çº¿ç‚¹é›†åˆï¼Œæå°å¹³é¢ç‚¹é›†åˆï¼Œæ¬¡æå°å¹³é¢ç‚¹é›†åˆ,åˆ é™¤çš„ç‚¹äº‘
     pubLaserCloud = nh.advertise<sensor_msgs::PointCloud2>("/velodyne_cloud_2", 100);
 
     pubCornerPointsSharp = nh.advertise<sensor_msgs::PointCloud2>("/laser_cloud_sharp", 100);
@@ -605,7 +599,7 @@ int main(int argc, char **argv)
 
     pubRemovePoints = nh.advertise<sensor_msgs::PointCloud2>("/laser_remove_points", 100);
 
-    if(PUB_EACH_LINE)//Õâ¸öÌõ¼şÃ»ÓĞ½øÈ¥
+    if(PUB_EACH_LINE)//è¿™ä¸ªæ¡ä»¶æ²¡æœ‰è¿›å»
     {
         for(int i = 0; i < N_SCANS; i++)
         {
@@ -613,10 +607,8 @@ int main(int argc, char **argv)
             pubEachScan.push_back(tmp);
         }
     }
-    ros::spin();// Ñ­»·Ö´ĞĞ»Øµ÷º¯Êı
+    ros::spin();// å¾ªç¯æ‰§è¡Œå›è°ƒå‡½æ•°
 
     return 0;
 }
-
-
 

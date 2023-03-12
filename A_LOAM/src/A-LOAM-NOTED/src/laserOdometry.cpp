@@ -34,7 +34,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//laserOdometry的作用就是对相邻帧的两帧点云做帧间匹配得到位姿的变换
+//scanRegistration的功能就是提取特征点。
 #include <cmath>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
@@ -101,7 +101,7 @@ int laserCloudCornerLastNum = 0;
 int laserCloudSurfLastNum = 0;
 
 // Lidar Odometry线程估计的frame在world坐标系的位姿P，Transformation from current frame to world frame
-Eigen::Quaterniond q_w_curr(1, 0, 0, 0);
+Eigen::Quaterniond q_w_curr(1, 0, 0, 0); // (q,x,y,z)
 Eigen::Vector3d t_w_curr(0, 0, 0);
 
 // 点云特征匹配时的优化变量
@@ -633,7 +633,7 @@ int main(int argc, char **argv)
             // publish odometry
             // 创建nav_msgs::Odometry消息类型，把信息导入，并发布
             nav_msgs::Odometry laserOdometry;
-            laserOdometry.header.frame_id = "/camera_init";//选择相机坐标系
+            laserOdometry.header.frame_id = "/camera_init";//选择相机里程坐标系
             laserOdometry.child_frame_id = "/laser_odom";
             laserOdometry.header.stamp = ros::Time().fromSec(timeSurfPointsLessFlat);
             // 以四元数和平移向量发出去
