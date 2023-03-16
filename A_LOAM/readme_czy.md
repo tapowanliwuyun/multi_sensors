@@ -273,7 +273,7 @@ main函数，读取cmake参数，定义发布和订阅：
 | topic | frame_id|child_frame_id| 说明 | 消息类型 |
 |  ----  | ----  | ----  | ----  | ---- |
 | /laser_cloud_surround | /camera_init |  | 发布局部地图，每五帧发布一次，所有的线面点，在地图坐标系下 | sensor_msgs::PointCloud2 |
-| /laser_cloud_surround | /camera_init |  | 发布全局地图，每20帧发布一次，所有的线面点，在地图坐标系下 | /laser_cloud_map |
+| /laser_cloud_map | /camera_init |  | 发布全局地图，每20帧发布一次，所有的线面点，在地图坐标系下 | /laser_cloud_map |
 | /velodyne_cloud_registered | /camera_init |  | 发布当前帧点云，所有的点，在地图坐标系下 | /laser_cloud_map |
 | /aft_mapped_to_init | /camera_init | /aft_mapped | 发布map更新后的里程计| nav_msgs::Odometry| 
 | /aft_mapped_path | /camera_init |  | 发布map更新后的位姿 | geometry_msgs::PoseStamped |

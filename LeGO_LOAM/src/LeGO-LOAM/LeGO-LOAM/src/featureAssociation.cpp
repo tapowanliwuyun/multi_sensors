@@ -186,11 +186,11 @@ public:
     FeatureAssociation():
         nh("~")
         {
-         // 订阅了分割之后的点云
+         // 订阅了聚类之后的点云
         subLaserCloud = nh.subscribe<sensor_msgs::PointCloud2>("/segmented_cloud", 1, &FeatureAssociation::laserCloudHandler, this);
-         // 订阅的分割点云含有图像的深度信息
+         // 订阅的聚类点云含有图像的深度信息
         subLaserCloudInfo = nh.subscribe<cloud_msgs::cloud_info>("/segmented_cloud_info", 1, &FeatureAssociation::laserCloudInfoHandler, this);
-        // 非聚类的点
+        // 未成功聚类的点
         subOutlierCloud = nh.subscribe<sensor_msgs::PointCloud2>("/outlier_cloud", 1, &FeatureAssociation::outlierCloudHandler, this);
         // IMU传感器的消息
         subImu = nh.subscribe<sensor_msgs::Imu>(imuTopic, 50, &FeatureAssociation::imuHandler, this);
@@ -334,7 +334,7 @@ public:
         imuShiftFromStartXCur = imuShiftXCur - imuShiftXStart;// - imuVeloXStart * pointTime; czy
         imuShiftFromStartYCur = imuShiftYCur - imuShiftYStart; //- imuVeloYStart * pointTime; czy
         imuShiftFromStartZCur = imuShiftZCur - imuShiftZStart; //- imuVeloZStart * pointTime; czy
-        //将IMU速度差值 从地理坐标系下，变换到 当前帧第一个点的 车辆坐标系下
+        //将 非匀速运动下的激光位置偏移量 从地理坐标系下，变换到 当前帧第一个点的 车辆坐标系下
         float x1 = cosImuYawStart * imuShiftFromStartXCur - sinImuYawStart * imuShiftFromStartZCur;
         float y1 = imuShiftFromStartYCur;
         float z1 = sinImuYawStart * imuShiftFromStartXCur + cosImuYawStart * imuShiftFromStartZCur;
@@ -350,11 +350,11 @@ public:
 
     void VeloToStartIMU()
     {
-        //计算当前激光点到第一个激光点时的IMU速度差值
+        //计算当前激光点到第一个激光点时的 速度差值
         imuVeloFromStartXCur = imuVeloXCur - imuVeloXStart;
         imuVeloFromStartYCur = imuVeloYCur - imuVeloYStart;
         imuVeloFromStartZCur = imuVeloZCur - imuVeloZStart;
-        //将IMU速度差值 从地理坐标系下，变换到 当前帧第一个点的 车辆坐标系下
+        //将 速度差值 从地理坐标系下，变换到 当前帧第一个点的 车辆坐标系下
         float x1 = cosImuYawStart * imuVeloFromStartXCur - sinImuYawStart * imuVeloFromStartZCur;
         float y1 = imuVeloFromStartYCur;
         float z1 = sinImuYawStart * imuVeloFromStartXCur + cosImuYawStart * imuVeloFromStartZCur;
@@ -382,7 +382,7 @@ public:
         float x3 = cos(imuYawCur) * x2 + sin(imuYawCur) * z2;
         float y3 = y2;
         float z3 = -sin(imuYawCur) * x2 + cos(imuYawCur) * z2;
-        //将当前点 从地理坐标系下 变换到 第一个激光点时的IMU下
+        //将当前点 从地理坐标系下 变换到 第一个激光点时的IMU下 
         float x4 = cosImuYawStart * x3 - sinImuYawStart * z3;
         float y4 = y3;
         float z4 = sinImuYawStart * x3 + cosImuYawStart * z3;
@@ -515,7 +515,7 @@ public:
             point.z = segmentedCloud->points[i].x;
             // -atan2(p.x,p.z)==>-atan2(y,x)
             // ori表示的是偏航角yaw，因为前面有负号，ori=[-M_PI,M_PI)
-            // 因为segInfo.orientationDiff表示的范围是(PI,3PI)，在2PI附近
+            // 因为 segInfo.orientationDiff表示的范围是(PI,3PI)，在2PI附近
             // 下面过程的主要作用是调整ori大小，满足start<ori<end
             float ori = -atan2(point.x, point.z);
             if (!halfPassed) {
@@ -545,7 +545,7 @@ public:
 
             if (imuPointerLast >= 0) {
                 float pointTime = relTime * scanPeriod;//scanPeriod = 0.1;一般激光雷达是10hz
-                imuPointerFront = imuPointerLastIteration;
+                imuPointerFront = imuPointerLastIteration;//imuPointerFront是当前点的上一个点
                 // while循环内进行时间轴对齐
                 while (imuPointerFront != imuPointerLast) { // 直到 imu 数据读到当前imu数据的上一个数据
                     if (timeScanCur + pointTime < imuTime[imuPointerFront]) { //  寻找IMU数据，IMU数据时间戳大于当前激光点的时间，如果一直都没有，则把最后一个IMU数据作为最新的IMU数据
@@ -557,7 +557,7 @@ public:
                 if (timeScanCur + pointTime > imuTime[imuPointerFront]) {//在上面没有找到 IMU 数据时间戳大于当前激光点的时间的 IMU 数据，则把最后一个 IMU 数据作为最新的 IMU 数据
                     // 该条件内imu数据比激光数据早，但是没有更后面的数据
                     // (打个比方,激光在9点时出现，imu现在只有8点的)
-                    // 这种情况上面while循环是以imuPointerFront == imuPointerLast结束的
+                    // 这种情况上面while循环是以 imuPointerFront == imuPointerLast 结束的
                     imuRollCur = imuRoll[imuPointerFront];
                     imuPitchCur = imuPitch[imuPointerFront];
                     imuYawCur = imuYaw[imuPointerFront];
@@ -627,7 +627,7 @@ public:
                                                          / (imuTime[imuPointerFront] - imuTime[imuPointerBack]);
                         float ratioBack = (imuTime[imuPointerFront] - timeScanCur - pointTime) 
                                                         / (imuTime[imuPointerFront] - imuTime[imuPointerBack]);
-                        imuAngularRotationXCur = imuAngularRotationX[imuPointerFront] * ratioFront + imuAngularRotationX[imuPointerBack] * ratioBack;//计算的是当前帧一个点的IMU读数
+                        imuAngularRotationXCur = imuAngularRotationX[imuPointerFront] * ratioFront + imuAngularRotationX[imuPointerBack] * ratioBack;//计算的是当前帧第一个点的IMU读数
                         imuAngularRotationYCur = imuAngularRotationY[imuPointerFront] * ratioFront + imuAngularRotationY[imuPointerBack] * ratioBack;
                         imuAngularRotationZCur = imuAngularRotationZ[imuPointerFront] * ratioFront + imuAngularRotationZ[imuPointerBack] * ratioBack;
                     }
@@ -1961,11 +1961,11 @@ public:
         }
         //2.1 更新初始位姿
         updateInitialGuess();
-        //2.2 特征点匹配 
+        //2.2 特征点匹配 ， 前后帧匹配计算两帧之间的相对位姿变换
         updateTransformation();
-        // 2.3 坐标变换
+        // 2.3 坐标变换，更新位姿
         integrateTransformation();
-        // 2.4 发布雷达里程计消息
+        // 2.4 发布激光里程计消息
         publishOdometry();
         // 2.5 发布用于图优化的点云
         publishCloudsLast(); // cloud to mapOptimization

@@ -33,7 +33,7 @@
 //      IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS). October 2018.
 
 #include "utility.h"
-
+#include <iostream>
 class ImageProjection{
 private:
 
@@ -253,7 +253,7 @@ public:
             horizonAngle = atan2(thisPoint.x, thisPoint.y) * 180 / M_PI;//计算水平角
 
             columnIdn = -round((horizonAngle-90.0)/ang_res_x) + Horizon_SCAN/2;//ang_res_x = 0.2;Horizon_SCAN = 1800;round()为四舍五入
-            if (columnIdn >= Horizon_SCAN)
+            if (columnIdn >= Horizon_SCAN)//Horizon_SCAN = 1800;
                 columnIdn -= Horizon_SCAN;
 
             if (columnIdn < 0 || columnIdn >= Horizon_SCAN)
@@ -271,8 +271,8 @@ public:
             //7、深度图的索引值  index = 列号 +  行号 * 1800 
             index = columnIdn  + rowIdn * Horizon_SCAN;//
             //8、将当前点以两种方式存储
-            fullCloud->points[index] = thisPoint; // 个人理解是 fullCloud 存放的是坐标信息（二维的），此时的thisPoint有x、y、z、I信息，I为其在一帧中的位置
-            fullInfoCloud->points[index] = thisPoint;// fullInfoCloud 增加了点到传感器的距离信息（三维的） ，I为其距激光传感器的位置
+            fullCloud->points[index] = thisPoint; // 个人理解是 fullCloud 存放的是坐标信息，此时的thisPoint有x、y、z、I信息，I为其在一帧中的位置
+            fullInfoCloud->points[index] = thisPoint;// fullInfoCloud 增加了点到传感器的距离信息 ，I为其距激光传感器的位置
             fullInfoCloud->points[index].intensity = range; // the corresponding range of a point is saved as "intensity"
         }
     }
@@ -323,7 +323,7 @@ public:
                 }
             }
         }
-        // 发布点云信息，只发布地面点云信息
+        // 如果有topic订阅地面点云信息，则进行处理
         if (pubGroundCloud.getNumSubscribers() != 0){
             for (size_t i = 0; i <= groundScanInd; ++i){//groundScanInd = 7;
                 for (size_t j = 0; j < Horizon_SCAN; ++j){//Horizon_SCAN = 1800;
@@ -358,7 +358,7 @@ public:
                     // 1. 如果 label 为 999999 则跳过
                     // labelMat 数值为 999999 表示这个点是因为聚类数量不够30而被舍弃的点
                     // 需要舍弃的点直接continue跳过本次循环，
-                    // 当列数为5的倍数，并且行数较大，可以认为非地面点的，将它保存进异常点云(界外点云)中
+                    // 当列数为5的倍数，并且行数较大，可以认为非地面点的，将它保存进异常点云(界外点云)中；也就是对于scan大于7，每五个点选择一个存入 outlierCloud 中
                     // 然后再跳过本次循环
                     if (labelMat.at<int>(i,j) == 999999){
                         if (i > groundScanInd && j % 5 == 0){ //groundScanInd = 7;
@@ -369,7 +369,7 @@ public:
                         }
                     }
                     // majority of ground points are skipped
-                    // 2. 如果为地，跳过index不是5的倍数的点
+                    // 2. 如果为地，跳过index不是5的倍数的点；可以理解为地点，每五个选一个；
                     if (groundMat.at<int8_t>(i,j) == 1){
                         if (j%5!=0 && j>5 && j<Horizon_SCAN-5) //Horizon_SCAN = 1800;
                             continue;
@@ -419,11 +419,10 @@ public:
         int queueSize = 1;// 需要计算角度的点的数量
         int queueStartInd = 0;
         int queueEndInd = 1;
-
         allPushedIndX[0] = row;
         allPushedIndY[0] = col;
         int allPushedIndSize = 1;
-        
+
         while(queueSize > 0){
             // Pop point
             fromIndX = queueIndX[queueStartInd];
@@ -472,13 +471,13 @@ public:
                     labelMat.at<int>(thisIndX, thisIndY) = labelCount;
                     lineCountFlag[thisIndX] = true;//用来标记垂直方向上此聚类的占比
 
-                    allPushedIndX[allPushedIndSize] = thisIndX;
+                    allPushedIndX[allPushedIndSize] = thisIndX;//所有参与聚类的点
                     allPushedIndY[allPushedIndSize] = thisIndY;
                     ++allPushedIndSize;
                 }
             }
         }
-
+        //std::cout << "allPushedIndSize = " << allPushedIndSize << std::endl;
         // check if this segment is valid
         bool feasibleSegment = false;
         // 如果是 allPushedIndSize 累加的数量增加到了30 个 则判断这部分点云属于一个聚类
@@ -490,7 +489,7 @@ public:
             for (size_t i = 0; i < N_SCAN; ++i)
                 if (lineCountFlag[i] == true)
                     ++lineCount;
-            if (lineCount >= segmentValidLineNum)
+            if (lineCount >= segmentValidLineNum)//segmentValidLineNum = 3;
                 feasibleSegment = true;            
         }
         // segment is valid, mark these points
