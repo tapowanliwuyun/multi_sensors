@@ -127,6 +127,7 @@ extern const float nearestFeatureSearchSqDist = 25;
 
 
 // Mapping Params
+//距离当前姿势n米以内的关键帧将被考虑用于scan-to-map优化（当禁用循环闭合时）
 extern const float surroundingKeyframeSearchRadius = 50.0; // key frame that is within n meters from current pose will be considerd for scan-to-map optimization (when loop closure disabled)
 extern const int   surroundingKeyframeSearchNum = 50; // submap size (when loop closure enabled)
 // history key frames (history submap for loop closure)

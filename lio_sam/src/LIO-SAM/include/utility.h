@@ -248,7 +248,13 @@ public:
 
         usleep(100);
     }
-
+    /// @brief imuConverter函数，这个函数之后会被频繁调用。它主要的作用，是把IMU的信息，从IMU坐标系，转换到雷达坐标系。
+    ///（注意，这个函数只旋转，没有平移，和真正的雷达坐标系之间还是差了一个平移的。至于为什么没有平移，先提前剧透一下，
+    /// 在imuPreintegration.cpp文件中，还有两个imu2Lidar，lidar2imu变量，这俩变量只有平移，没有旋转。
+    // 事实上，作者后续是把imu数据先用imuConverter旋转到雷达系下（但其实还差了个平移）。然后他把雷达数据又根据lidar2Imu反向平移了一下，
+    // 和转换以后差了个平移的imu数据在“中间系”对齐，之后算完又从中间系通过imu2Lidar挪回了雷达系进行publish。
+    /// @param imu_in 
+    /// @return 
     sensor_msgs::Imu imuConverter(const sensor_msgs::Imu& imu_in)
     {
         sensor_msgs::Imu imu_out = imu_in;
@@ -281,7 +287,7 @@ public:
         return imu_out;
     }
 };
-
+//publishCloud函数，这个函数传入句柄，然后发布形参里的内容，在cpp文件涉及到话题发布的地方，都会调用它。
 template<typename T>
 sensor_msgs::PointCloud2 publishCloud(const ros::Publisher& thisPub, const T& thisCloud, ros::Time thisStamp, std::string thisFrame)
 {

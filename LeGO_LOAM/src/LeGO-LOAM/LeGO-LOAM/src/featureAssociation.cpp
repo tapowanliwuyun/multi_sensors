@@ -632,7 +632,7 @@ public:
                         imuAngularRotationZCur = imuAngularRotationZ[imuPointerFront] * ratioFront + imuAngularRotationZ[imuPointerBack] * ratioBack;
                     }
                     // 距离上一次插补，旋转过的角度变化值
-                    imuAngularFromStartX = imuAngularRotationXCur - imuAngularRotationXLast;//计算的是当前帧第一个点的IMU读数与上一帧第一个点的IMU读数之差
+                    imuAngularFromStartX = imuAngularRotationXCur - imuAngularRotationXLast;//计算的是当前帧第一个点的IMU读数与上一帧第一个点的IMU读数之差（imu原始坐标系下）
                     imuAngularFromStartY = imuAngularRotationYCur - imuAngularRotationYLast;
                     imuAngularFromStartZ = imuAngularRotationZCur - imuAngularRotationZLast;
 
@@ -671,9 +671,9 @@ public:
 
             cloudCurvature[i] = diffRange*diffRange;//将曲率的平方放入
             // 在markOccludedPoints()函数中对该参数进行重新修改
-            cloudNeighborPicked[i] = 0;
+            cloudNeighborPicked[i] = 0;// cloudNeighborPicked为1则表示被选择过
 			// 在extractFeatures()函数中会对标签进行修改，
-			// 初始化为0，surfPointsFlat标记为-1，surfPointsLessFlatScan为不大于0的标签
+			// 初始化为0，surfPointsFlat标记为-1， surfPointsLessFlatScan 为不大于0的标签
 			// cornerPointsSharp标记为2，cornerPointsLessSharp标记为1
             cloudLabel[i] = 0;
 
@@ -682,7 +682,7 @@ public:
         }
     }
     //1.3 标记出远点和离散点
-        // 阻塞点（远点）是哪种点?
+    // 阻塞点（远点）是哪种点?
     // 阻塞点指点云之间相互遮挡，而且又靠得很近的点
     void markOccludedPoints()
     {
@@ -732,7 +732,7 @@ public:
 
         for (int i = 0; i < N_SCAN; i++) {
 
-            surfPointsLessFlatScan->clear();
+            surfPointsLessFlatScan->clear();// 每条scan的lessflat
             // 将一帧激光图像分成 6个子图 提取的特征点相对均匀
             for (int j = 0; j < 6; j++) {
 
@@ -742,7 +742,7 @@ public:
                 if (sp >= ep)
                     continue;
                 // 按照曲率的大小排序
-                // 按照cloudSmoothness.value从小到大排序
+                // 按照 cloudSmoothness.value从小到大排序
                 std::sort(cloudSmoothness.begin()+sp, cloudSmoothness.begin()+ep, by_value());
 
                 // 从1/6点云帧中选出 2个shape edge、20个less shape edge
@@ -924,16 +924,16 @@ public:
         // ===> SCAN_PERIOD=0.1(雷达频率为10hz)
         // 以上理解感谢github用户StefanGlaser
         // https://github.com/laboshinl/loam_velodyne/issues/29
-        float s = 10 * (pi->intensity - int(pi->intensity));
+        float s = 10 * (pi->intensity - int(pi->intensity));//获取的是当前帧的当前点 pi 到 第一个点 的所占当前帧的比例 
      
-        float rx = s * transformCur[0];
-        float ry = s * transformCur[1];
-        float rz = s * transformCur[2];
-        float tx = s * transformCur[3];
-        float ty = s * transformCur[4];
-        float tz = s * transformCur[5];
+        float rx = s * transformCur[0]; //获取两个点之间的角度和位置变换（车辆坐标系下）
+        float ry = s * transformCur[1]; 
+        float rz = s * transformCur[2]; 
+        float tx = s * transformCur[3]; 
+        float ty = s * transformCur[4]; 
+        float tz = s * transformCur[5]; 
 
-        //原版，这里是默认加了负号的
+        //原版，这里是默认加了负号的，因为rx等就是 当前帧的 第一个点 到当前点 pi   ，而实际上需要的是 当前点pi 到第一个点，这里将当前点坐标系变换到 第一个点的坐标系
         float x1 = cos(rz) * (pi->x - tx) + sin(rz) * (pi->y - ty);
         float y1 = -sin(rz) * (pi->x - tx) + cos(rz) * (pi->y - ty);
         float z1 = (pi->z - tz);
@@ -1019,10 +1019,10 @@ public:
         po->z = z11;
         po->intensity = int(pi->intensity);
     }
-
-    void PluginIMURotation(float bcx, float bcy, float bcz, float blx, float bly, float blz, 
+   //目的：纠正精确化rx, ry, rz的值，imuEnd*inv(imuStart)*Sum表示在估计的里程计中附加IMU测量的旋转量。
+    void PluginIMURotation(float bcx, float bcy, float bcz, float blx, float bly, float blz,    //(rx, ry, rz, imuPitchStart, imuYawStart, imuRollStart, imuPitchLast, imuYawLast, imuRollLast, rx, ry, rz);
                            float alx, float aly, float alz, float &acx, float &acy, float &acz)
-    {
+    { //rx, ry, rz 存放累计的 当前帧全局位姿 的旋转，imu分别存放到当前帧 （imuPitchStart） 和到上一帧 （imuPitchLast） 的imu角度值，是imu的测量数据。
         float sbcx = sin(bcx);
         float cbcx = cos(bcx);
         float sbcy = sin(bcy);
@@ -1190,17 +1190,17 @@ public:
                 float m22 = ((x0 - x1)*(z0 - z2) - (x0 - x2)*(z0 - z1));
                 float m33 = ((y0 - y1)*(z0 - z2) - (y0 - y2)*(z0 - z1));
 
-                float a012 = sqrt(m11 * m11  + m22 * m22 + m33 * m33);
+                float a012 = sqrt(m11 * m11  + m22 * m22 + m33 * m33);// 这是 01 和02 两条边围成的 平行四边形面积
 
-                float l12 = sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) + (z1 - z2)*(z1 - z2));
+                float l12 = sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) + (z1 - z2)*(z1 - z2));//这是12 线段的长度；所以 a012/l12 就是 线点 到12线段的距离
 
-                float la =  ((y1 - y2)*m11 + (z1 - z2)*m22) / a012 / l12;
+                float la =  ((y1 - y2)*m11 + (z1 - z2)*m22) / a012 / l12;// 这是 长度 的矢量方向
 
                 float lb = -((x1 - x2)*m11 - (z1 - z2)*m33) / a012 / l12;
 
                 float lc = -((x1 - x2)*m22 + (y1 - y2)*m33) / a012 / l12;
 
-                float ld2 = a012 / l12;
+                float ld2 = a012 / l12; //这是线段的长度
 
                 float s = 1;
                 if (iterCount >= 5) {
@@ -1225,10 +1225,10 @@ public:
         int surfPointsFlatNum = surfPointsFlat->points.size();//当前帧的面点的数目
 
         for (int i = 0; i < surfPointsFlatNum; i++) {
-            // 坐标变换到开始时刻，参数0是输入，参数1是输出，因为后面上一时刻的特征点转换到了每一帧的末尾时刻
+            // 坐标变换到开始时刻，参数0是输入，参数1是输出， 因为后面将上一时刻的特征点转换到了每一帧的末尾时刻
             TransformToStart(&surfPointsFlat->points[i], &pointSel);
 
-            if (iterCount % 5 == 0) {//每五次迭代一次
+            if (iterCount % 5 == 0) { // 每五次迭代一次
                 // k点最近邻搜索，这里k=1
                 kdtreeSurfLast->nearestKSearch(pointSel, 1, pointSearchInd, pointSearchSqDis);//寻找该点在上一帧面点的最近点，寻找1个
                 int closestPointInd = -1, minPointInd2 = -1, minPointInd3 = -1;
@@ -1319,7 +1319,7 @@ public:
                          - (tripod3.z - tripod1.z) * (tripod2.x - tripod1.x);
                 float pc = (tripod2.x - tripod1.x) * (tripod3.y - tripod1.y) 
                          - (tripod3.x - tripod1.x) * (tripod2.y - tripod1.y);
-                float pd = -(pa * tripod1.x + pb * tripod1.y + pc * tripod1.z);
+                float pd = -(pa * tripod1.x + pb * tripod1.y + pc * tripod1.z);//第一个点 在法向量上的投影长度
 
                 float ps = sqrt(pa * pa + pb * pb + pc * pc);
 
@@ -1329,7 +1329,7 @@ public:
                 pd /= ps;
                 // 距离没有取绝对值
                 // 两个向量的点乘，分母除以ps中已经除掉了，
-                // 加pd原因:pointSel与tripod1构成的线段需要相减
+                // 加pd原因: pointSel 与 tripod1 构成的线段需要相减
                 float pd2 = pa * pointSel.x + pb * pointSel.y + pc * pointSel.z + pd;
 
                 float s = 1;
@@ -1407,7 +1407,7 @@ public:
             matA.at<float>(i, 0) = arx;
             matA.at<float>(i, 1) = arz;
             matA.at<float>(i, 2) = aty;
-            matB.at<float>(i, 0) = -0.05 * d2;
+            matB.at<float>(i, 0) = -0.05 * d2;//czy理解的：这个0.05 就是让求解出来的X 缩小20倍，进而使得更新的权重降低
         }
         // transpose函数求得matA的转置matAt
         cv::transpose(matA, matAt);
@@ -1747,9 +1747,9 @@ public:
         imuVeloFromStartY = imuVeloFromStartYCur;
         imuVeloFromStartZ = imuVeloFromStartZCur;
         // 关于下面负号的说明：
-        // transformCur是在Cur坐标系下的 p_start=R*p_cur+t
+        // transformCur 是在Cur坐标系下的 p_start=R*p_cur+t
         // R和t是在Cur坐标系下的
-        // 而imuAngularFromStart是在start坐标系下的，所以需要加负号
+        // 而 imuAngularFromStart 是在start坐标系下的，所以需要加负号（start坐标系是 ）
         if (imuAngularFromStartX != 0 || imuAngularFromStartY != 0 || imuAngularFromStartZ != 0){
            //注意：这里X赋予了2，这是由于IMU安装位置决定的，从此刻才第一次将角度转换到使用的坐标系中
             transformCur[0] = - imuAngularFromStartY;
@@ -1776,7 +1776,7 @@ public:
             // 找到对应的特征平面
             // 然后计算协方差矩阵，保存在coeffSel队列中
             // laserCloudOri 中保存的是对应于coeffSel的未转换到开始时刻的原始点云数据
-            findCorrespondingSurfFeatures(iterCount1);
+            findCorrespondingSurfFeatures(iterCount1);//寻找点面特征
 
             if (laserCloudOri->points.size() < 10)
                 continue;
@@ -1821,7 +1821,7 @@ public:
         ty = transformSum[4] - y2;
         tz = transformSum[5] - (-sin(ry) * x2 + cos(ry) * z2);
    //(rx, ry, rz, imuPitchStart, imuYawStart, imuRollStart, imuPitchLast, imuYawLast, imuRollLast, rx, ry, rz);
-   //rx, ry, rz存放累计的到tend的旋转，imu分别存放到开始和到结束的旋转，是imu的测量数据。
+   //rx, ry, rz 存放累计的 当前帧全局位姿 的旋转，imu分别存放到当前帧 （imuPitchStart） 和到上一帧 （imuPitchLast） 的imu角度值，是imu的测量数据。
    //目的：纠正精确化rx, ry, rz的值，imuEnd*inv(imuStart)*Sum表示在估计的里程计中附加IMU测量的旋转量。
    // 将 根据激光点云所求得到的 旋转从 当前帧第一个点云坐标系下 变换到最后一个点云坐标系下
         PluginIMURotation(rx, ry, rz, imuPitchStart, imuYawStart, imuRollStart, 

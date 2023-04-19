@@ -1,0 +1,44 @@
+cmake_minimum_required(VERSION 3.0)
+project(cap89)
+set(CMAKE_CXX_STANDARD 14)
+
+find_package(GTSAM REQUIRED)
+include_directories(${GTSAM_INCLUDE_DIR})
+
+include_directories("/usr/include/eigen3")
+
+add_executable(Pose2SLAMExample src/Pose2SLAMExample.cpp)
+target_link_libraries(Pose2SLAMExample gtsam)
+
+add_executable(Pose2SLAMExample_graphviz src/Pose2SLAMExample_graphviz.cpp)
+target_link_libraries(Pose2SLAMExample_graphviz gtsam)
+
+add_executable(Pose2SLAMwSPCG src/Pose2SLAMwSPCG.cpp)
+target_link_libraries(Pose2SLAMwSPCG gtsam)
+
+add_executable(Pose2SLAMExampleExpressions src/Pose2SLAMExampleExpressions.cpp)
+target_link_libraries(Pose2SLAMExampleExpressions gtsam)
+
+add_executable(Pose2SLAMExample_g2o src/Pose2SLAMExample_g2o.cpp)
+target_link_libraries(Pose2SLAMExample_g2o gtsam)
+
+add_executable(Pose2SLAMExample_lago src/Pose2SLAMExample_lago.cpp)
+target_link_libraries(Pose2SLAMExample_lago gtsam)
+
+add_executable(Pose2SLAMExample_graph src/Pose2SLAMExample_graph.cpp)
+target_link_libraries(Pose2SLAMExample_graph gtsam)
+
+add_executable(Pose2SLAMStressTest src/Pose2SLAMStressTest.cpp)
+target_link_libraries(Pose2SLAMStressTest gtsam)
+
+add_executable(Pose3SLAMExample_g2o src/Pose3SLAMExample_g2o.cpp)
+target_link_libraries(Pose3SLAMExample_g2o gtsam)
+
+add_executable(Pose3SLAMExample_initializePose3Chordal src/Pose3SLAMExample_initializePose3Chordal.cpp)
+target_link_libraries(Pose3SLAMExample_initializePose3Chordal gtsam)
+
+add_executable(Pose3SLAMExample_initializePose3Gradient src/Pose3SLAMExample_initializePose3Gradient.cpp)
+target_link_libraries(Pose3SLAMExample_initializePose3Gradient gtsam)
+
+add_executable(Pose3SLAMExampleExpressions_BearingRangeWithTransform src/Pose3SLAMExampleExpressions_BearingRangeWithTransform.cpp)
+target_link_libraries(Pose3SLAMExampleExpressions_BearingRangeWithTransform gtsam)

@@ -16,4 +16,9 @@ catkin_make
 source devel/setup.bash
 roslaunch lio_sam run.launch
 
-rosbag play park_dataset.bag
+rosbag play park_dataset.bag 
+
+
+4. 代码解析
+
+最好的参考：https://blog.csdn.net/zkk9527/article/details/117957067

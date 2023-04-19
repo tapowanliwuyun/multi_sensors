@@ -154,6 +154,15 @@ include_directories(
 add_executable(pcd_to_rviz src/pcd_to_rviz.cpp)
 target_link_libraries(pcd_to_rviz ${catkin_LIBRARIES})
 
+add_executable(recycle_show src/recycle_show.cpp)
+target_link_libraries(recycle_show ${catkin_LIBRARIES})
+
+add_executable(recycle_show_xunxu src/recycle_show_xunxu.cpp)
+target_link_libraries(recycle_show_xunxu ${catkin_LIBRARIES})
+
+add_executable(recycle_show_xunxu_1 src/recycle_show_xunxu_1.cpp)
+target_link_libraries(recycle_show_xunxu_1 ${catkin_LIBRARIES})
+
 #############
 ## Install ##
 #############

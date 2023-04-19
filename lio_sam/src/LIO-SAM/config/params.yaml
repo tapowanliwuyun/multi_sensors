@@ -1,8 +1,8 @@
 lio_sam:
 
   # Topics
-  pointCloudTopic: "/velodyne_points"               # Point cloud data
-  imuTopic: "/imu_raw"                         # IMU data
+  pointCloudTopic: "/points_raw"               # Point cloud data
+  imuTopic: "/imu_correct"                         # IMU data
   odomTopic: "odometry/imu"                   # IMU pre-preintegration odometry, same frequency as IMU 
   gpsTopic: "/odometry/gpsz"                   # GPS odometry topic from navsat, see module_navsat.launch file 
   # Frames
@@ -38,7 +38,7 @@ lio_sam:
   imuGravity: 9.80511
   imuRPYWeight: 0.01
 
-  # Extrinsics: T_lb (lidar -> imu)
+  # Extrinsics: T_lb (imu -> lidar),也就是说在IMU坐标系下的一个点，左乘T_lb，就可以变换到lidar坐标系下
   extrinsicTrans: [0.0, 0.0, 0.0]
   #extrinsicRot: [-1, 0, 0,
   #                0, 1, 0,
@@ -59,13 +59,13 @@ lio_sam:
   edgeFeatureMinValidNum: 10
   surfFeatureMinValidNum: 100
 
-  # voxel filter paprams
+  # voxel filter paprams 这个是一些体素滤波的下采样参数，注意室内和室外是有区别的。
   odometrySurfLeafSize: 0.2                     # default: 0.4 - outdoor, 0.2 - indoor
   mappingCornerLeafSize: 0.1                    # default: 0.2 - outdoor, 0.1 - indoor
   mappingSurfLeafSize: 0.2                      # default: 0.4 - outdoor, 0.2 - indoor
 
   # robot motion constraint (in case you are using a 2D robot)
-  z_tollerance: 1000                            # meters
+  z_tollerance: 1000                            # meters 可以给z一个比较大的限制，如果用的是无人车，那就不可能在z轴变化过大，这里就可以限制它，防止它飘走。
   rotation_tollerance: 1000                     # radians
 
   # CPU Params

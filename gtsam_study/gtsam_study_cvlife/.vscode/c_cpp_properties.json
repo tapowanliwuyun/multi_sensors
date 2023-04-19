@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/eigen3"
+                "/usr/include/eigen3",
+                "${workspaceFolder}/cap89_2D3D_poseSLAM_in_gtsam/src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

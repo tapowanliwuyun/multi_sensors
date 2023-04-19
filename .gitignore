@@ -15,6 +15,10 @@
 */biaoding/*/build/
 */biaoding/*/devel/
 
+#FAST_LIO
+*/*/build/
+*/*/devel/
+
 #F_LOAM
 */build/
 */devel/
