@@ -68,6 +68,10 @@
 */r3live/r3live_ws/build/
 */r3live/r3live_ws/devel/
 
+#s-fast-lio
+*/*/build/
+*/*/devel/
+
 #surfel_mapping
 */build/
 */devel/

@@ -6,6 +6,8 @@ cd ws_livox
 catkin_make
 
 2. 安装fast-lio
+
+source ../ws_livox/devel/setup.bash
 mkdir -p FAST_LIO/src
 cd FAST_LIO/src
 git clone https://github.com/hku-mars/FAST_LIO.git
