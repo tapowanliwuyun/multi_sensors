@@ -35,11 +35,11 @@ bool GNSSData::SyncData(std::deque<GNSSData>& UnsyncedData, std::deque<GNSSData>
             UnsyncedData.pop_front();
             continue;
         }
-        if (sync_time - UnsyncedData.front().time > 0.2) {
+        if (sync_time - UnsyncedData.front().time > 0.25) {
             UnsyncedData.pop_front();
             break;
         }
-        if (UnsyncedData.at(1).time - sync_time > 0.2) {
+        if (UnsyncedData.at(1).time - sync_time > 0.25) {
             UnsyncedData.pop_front();
             break;
         }

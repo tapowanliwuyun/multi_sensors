@@ -48,12 +48,12 @@ Eigen::Matrix<double, 12, 12> process_noise_cov()
 	return Q;
 }
 
-//对应公式(2) 中的f
+//对应公式(2) 中的f  起始这里的f就是将imu的积分方程组成矩阵形式然后再去计算
 Eigen::Matrix<double, 24, 1> get_f(state_ikfom s, input_ikfom in)	
 {
 // 对应顺序为速度(3)，角速度(3),外参T(3),外参旋转R(3)，加速度(3),角速度偏置(3),加速度偏置(3),位置(3)，与论文公式顺序不一致
 	Eigen::Matrix<double, 24, 1> res = Eigen::Matrix<double, 24, 1>::Zero();
-	Eigen::Vector3d omega = in.gyro - s.bg;		// 输入的imu的角速度(也就是实际测量值) - 估计的bias值(对应公式的第1行)
+	Eigen::Vector3d omega = in.gyro - s.bg;		// 输入的 imu 的角速度(也就是实际测量值) - 估计的bias值(对应公式的第1行)
 	Eigen::Vector3d a_inertial = s.rot.matrix() * (in.acc - s.ba);		//  输入的imu的加速度，先转到世界坐标系（对应公式的第3行）
 
 	for (int i = 0; i < 3; i++)

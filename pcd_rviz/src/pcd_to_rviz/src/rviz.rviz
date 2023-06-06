@@ -57,14 +57,14 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: -0.046949177980422974
-        Min Value: -4.6949567794799805
+        Max Value: 36.96142578125
+        Min Value: -14.993553161621094
         Value: true
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: AxisColor
+      Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -74,10 +74,10 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
-      Size (m): 5
-      Style: Points
-      Topic: /velodyne_points
+      Size (Pixels): 1
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /pcl_output1
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -93,7 +93,7 @@ Visualization Manager:
   Global Options:
     Background Color: 0; 0; 0
     Default Light: true
-    Fixed Frame: velodyne
+    Fixed Frame: odom1
     Frame Rate: 30
   Name: root
   Tools:
@@ -117,25 +117,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1823.0965576171875
+      Distance: 53.1906852722168
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 45.85695266723633
-        Y: 1048.8043212890625
-        Z: -1400.7261962890625
+        X: 5.826817035675049
+        Y: 14.67050838470459
+        Z: -6.0847015380859375
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.925203263759613
+      Pitch: 0.564796507358551
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.6726837158203125
+      Yaw: 0.13632726669311523
     Saved: ~
 Window Geometry:
   Displays:
@@ -153,5 +153,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1657
-  X: 2704
-  Y: 144
+  X: 2701
+  Y: 211

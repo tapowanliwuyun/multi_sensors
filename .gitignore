@@ -29,6 +29,10 @@
 */simple_factor_graph/build/
 */gtsam_study_cvlife/*/build/
 
+#imaging_lidar_place_recognition
+*/build/
+*/devel/
+
 #ku
 
 #LeGO_LOAM
@@ -77,6 +81,8 @@
 */devel/
 */my_data/
 */.vscode/
+
+#tictoc
 
 */*/*/build/
 */*/cmake-build-debug/

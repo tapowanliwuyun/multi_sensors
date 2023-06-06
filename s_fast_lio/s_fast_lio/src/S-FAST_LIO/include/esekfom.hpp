@@ -100,14 +100,15 @@ namespace esekfom
 						   KD_TREE<PointType> &ikdtree, vector<PointVector> &Nearest_Points, bool extrinsic_est)
 		{
 			int feats_down_size = feats_down_body->points.size();
-			laserCloudOri->clear();
-			corr_normvect->clear();
-
+			laserCloudOri->clear();  //将body系的有效点云存储清空
+			corr_normvect->clear();  //将对应的法向量清空
+			/** 最接近曲面搜索和残差计算  **/
 			#ifdef MP_EN
     			omp_set_num_threads(MP_PROC_NUM);
 			#pragma omp parallel for
 			#endif  
 
+   			 //对降采样后的每个特征点进行残差计算
 			for (int i = 0; i < feats_down_size; i++) //遍历所有的特征点
 			{
 				PointType &point_body = feats_down_body->points[i];
@@ -122,14 +123,16 @@ namespace esekfom
 				point_world.intensity = point_body.intensity;
 
 				vector<float> pointSearchSqDis(NUM_MATCH_POINTS);
-				auto &points_near = Nearest_Points[i]; // Nearest_Points[i]打印出来发现是按照离point_world距离，从小到大的顺序的vector
+				auto &points_near = Nearest_Points[i]; // Nearest_Points[i] 打印出来发现是按照离point_world距离，从小到大的顺序的vector
 
 				double ta = omp_get_wtime();
-				if (ekfom_data.converge)
+				if (ekfom_data.converge)//如果收敛了
 				{
 					//寻找point_world的最近邻的平面点
+         		   //在已构造的地图上查找特征点的最近邻
 					ikdtree.Nearest_Search(point_world, NUM_MATCH_POINTS, points_near, pointSearchSqDis);
 					//判断是否是有效匹配点，与loam系列类似，要求特征点最近邻的地图点数量>阈值，距离<阈值  满足条件的才置为true
+					//如果最近邻的点数小于NUM_MATCH_POINTS或者最近邻的点到特征点的距离大于5m，则认为该点不是有效点
 					point_selected_surf[i] = points_near.size() < NUM_MATCH_POINTS ? false : pointSearchSqDis[NUM_MATCH_POINTS - 1] > 5 ? false
 																																		: true;
 				}
@@ -138,19 +141,20 @@ namespace esekfom
 
 				Matrix<float, 4, 1> pabcd;		//平面点信息
 				point_selected_surf[i] = false; //将该点设置为无效点，用来判断是否满足条件
+
 				//拟合平面方程ax+by+cz+d=0并求解点到平面距离
-				if (esti_plane(pabcd, points_near, 0.1f))
+				if (esti_plane(pabcd, points_near, 0.1f))//找平面点法向量寻找，common_lib.h中的函数
 				{
 					float pd2 = pabcd(0) * point_world.x + pabcd(1) * point_world.y + pabcd(2) * point_world.z + pabcd(3); //当前点到平面的距离
 					float s = 1 - 0.9 * fabs(pd2) / sqrt(p_body.norm()); //如果残差大于经验阈值，则认为该点是有效点  简言之，距离原点越近的lidar点  要求点到平面的距离越苛刻
 
 					if (s > 0.9) //如果残差大于阈值，则认为该点是有效点
 					{
-						point_selected_surf[i] = true;
-						normvec->points[i].x = pabcd(0); //存储平面的单位法向量  以及当前点到平面距离
+						point_selected_surf[i] = true;//再次回复为有效点
+						normvec->points[i].x = pabcd(0); //存储平面的单位法向量  以及当前点到平面距离//将法向量存储至 normvec
 						normvec->points[i].y = pabcd(1);
 						normvec->points[i].z = pabcd(2);
-						normvec->points[i].intensity = pd2;
+						normvec->points[i].intensity = pd2;//将点到平面的距离存储至normvec的intensity中
 					}
 				}
 			}
@@ -160,9 +164,10 @@ namespace esekfom
 			{
 				if (point_selected_surf[i]) //对于满足要求的点
 				{
+      			      // body点存到laserCloudOri中
 					laserCloudOri->points[effct_feat_num] = feats_down_body->points[i]; //把这些点重新存到laserCloudOri中
 					corr_normvect->points[effct_feat_num] = normvec->points[i];			//存储这些点对应的法向量和到平面的距离
-					effct_feat_num++;
+					effct_feat_num++;  //有效特征点数加1
 				}
 			}
 
@@ -174,28 +179,33 @@ namespace esekfom
 			}
 
 			// 雅可比矩阵H和残差向量的计算
-			ekfom_data.h_x = MatrixXd::Zero(effct_feat_num, 12);
-			ekfom_data.h.resize(effct_feat_num);
+			ekfom_data.h_x = MatrixXd::Zero(effct_feat_num, 12); //测量雅可比矩阵H，公式14中的H
+			ekfom_data.h.resize(effct_feat_num); //测量向量h，公式14中的z
 
+   			 //求观测值与误差的雅克比矩阵，如论文式14以及式12、13
 			for (int i = 0; i < effct_feat_num; i++)
 			{
+   			     // 拿到的有效点的坐标
 				V3D point_(laserCloudOri->points[i].x, laserCloudOri->points[i].y, laserCloudOri->points[i].z);
-				M3D point_crossmat;
-				point_crossmat << SKEW_SYM_MATRX(point_);
-				V3D point_I_ = x_.offset_R_L_I * point_ + x_.offset_T_L_I;
+				M3D point_crossmat;//计算点的叉矩阵
+				point_crossmat << SKEW_SYM_MATRX(point_);        // 从点值转换到叉乘矩阵
+				// 转换到IMU坐标系下
+				V3D point_I_ = x_.offset_R_L_I * point_ + x_.offset_T_L_I;// offset_R_L_I，offset_T_L_I为IMU的旋转姿态和位移,此时转到了IMU坐标系下
 				M3D point_I_crossmat;
-				point_I_crossmat << SKEW_SYM_MATRX(point_I_);
+				point_I_crossmat << SKEW_SYM_MATRX(point_I_);//计算imu中点的叉矩阵
 
 				// 得到对应的平面的法向量
 				const PointType &norm_p = corr_normvect->points[i];
 				V3D norm_vec(norm_p.x, norm_p.y, norm_p.z);
 
-				// 计算雅可比矩阵H
-				V3D C(x_.rot.matrix().transpose() * norm_vec);
-				V3D A(point_I_crossmat * C);
+				// 计算雅可比矩阵 H
+				V3D C(x_.rot.matrix().transpose() * norm_vec);    //旋转矩阵的转置与法向量相乘得到C
+				V3D A(point_I_crossmat * C);         //对imu的差距真与C相乘得到A  // TODO czy 已解决，参考 https://zhuanlan.zhihu.com/p/561877392
 				if (extrinsic_est)
 				{
-					V3D B(point_crossmat * x_.offset_R_L_I.matrix().transpose() * C); 
+					V3D B(point_crossmat * x_.offset_R_L_I.matrix().transpose() * C); //对点的差距真与C相乘得到B
+					// imu在世界坐标系下的平移、旋转、imu与lidar之间的旋转、平移
+					// 这里使用右扰动函数对旋转进行求导，之所以会有所区别，这里对求出来的结果会进行一个转置，因为要将其变为横向量
 					ekfom_data.h_x.block<1, 12>(i, 0) << norm_p.x, norm_p.y, norm_p.z, VEC_FROM_ARRAY(A), VEC_FROM_ARRAY(B), VEC_FROM_ARRAY(C);
 				}
 				else
@@ -204,7 +214,8 @@ namespace esekfom
 				}
 
 				//残差：点面距离
-				ekfom_data.h(i) = -norm_p.intensity;
+				// 测量:到最近表面/角落的距离
+				ekfom_data.h(i) = -norm_p.intensity;//点到面的距离
 
 			}
 
@@ -230,6 +241,7 @@ namespace esekfom
 		}
 
 		//ESKF
+        // 迭代误差状态EKF更新修改为一个特定的系统
 		void update_iterated_dyn_share_modified(double R, PointCloudXYZI::Ptr &feats_down_body,
 												KD_TREE<PointType> &ikdtree, vector<PointVector> &Nearest_Points, int maximum_iter, bool extrinsic_est)
 		{
@@ -243,7 +255,7 @@ namespace esekfom
 			cov P_propagated = P_;
 
 			vectorized_state dx_new = vectorized_state::Zero(); // 24X1的向量
-
+            // 最多进行maximum_iter次迭代优化
 			for (int i = -1; i < maximum_iter; i++)	 // maximum_iter是卡尔曼滤波的最大迭代次数
 			{				
 				dyn_share.valid = true;
@@ -263,13 +275,13 @@ namespace esekfom
 				Eigen::Matrix<double, 24, 24> HTH = Matrix<double, 24, 24>::Zero();   //矩阵 H^T * H
 				HTH.block<12, 12>(0, 0) = H.transpose() * H;
 
-				auto K_front = (HTH / R + P_.inverse()).inverse();
+				auto K_front = (HTH / R + P_.inverse()).inverse();//参考fastlio的公式20
 				Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> K;
-				K = K_front.block<24, 12>(0, 0) * H.transpose() / R;  //卡尔曼增益  这里R视为常数
+				K = K_front.block<24, 12>(0, 0) * H.transpose() / R;  //卡尔曼增益  这里R视为常数 TODO czy 这里的R视为常数，就是说观测协方差未做出优化
 
 				Eigen::Matrix<double, 24, 24> KH = Matrix<double, 24, 24>::Zero();   //矩阵 K * H
 				KH.block<24, 12>(0, 0) = K * H;
-				Matrix<double, 24, 1> dx_ = K * dyn_share.h + (KH - Matrix<double, 24, 24>::Identity()) * dx_new;   //公式(18)
+				Matrix<double, 24, 1> dx_ = K * dyn_share.h + (KH - Matrix<double, 24, 24>::Identity()) * dx_new;   //公式(18), 这里的h（也就是z）在前面计算的时候已经加过了负号，所以是这样没问题的
 
 				x_ = boxplus(x_, dx_);	//公式(18)
 
@@ -285,7 +297,7 @@ namespace esekfom
 
 				if(dyn_share.converge) t++;
 
-				if(!t && i == maximum_iter - 2)  //如果迭代了3次还没收敛 强制令成true，h_share_model函数中会重新寻找近邻点
+				if(!t && i == maximum_iter - 2)  //如果迭代了3次还没收敛 强制令成true， h_share_model 函数中会重新寻找近邻点
 				{
 					dyn_share.converge = true;
 				}
