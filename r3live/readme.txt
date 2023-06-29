@@ -24,6 +24,9 @@ catkin_make
 source ./devel/setup.sh
 
 注意：作者在readme中说了，因为Livox-ros-driver官方发布的LiDAR数据和IMU数据都带有LiDAR的时间戳(每次记录都从0开始)，而图像的时间戳通常是用操作系统的时间戳记录的。为了使它们在相同的基于时间的情况下工作，作者修改了Livox-ros-driver的源代码，所以作者新的driver驱动包可以从livox_ros_driver_for_R2LIVE获得。
+
+后面我也该了这个，由于我这个realsensel515和livox-hap都N100的imu是从操作系统的时间开始的，所以没必要修改
+
 如果是为R3LIVE采集并运行自己的数据需要用它替换官方驱动程序。
 原文链接：https://blog.csdn.net/handily_1/article/details/122271243
 

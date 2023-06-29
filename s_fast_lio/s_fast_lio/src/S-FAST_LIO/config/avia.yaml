@@ -1,6 +1,6 @@
 common:
     lid_topic:  "/livox/lidar"
-    imu_topic:  "/livox/imu"
+    imu_topic:  "/imu"
     time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
     time_offset_lidar_to_imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
                                   # This param will take effect no matter what time_sync_en is. So if the time offset is not known exactly, please set as 0.0
@@ -15,7 +15,7 @@ mapping:
     gyr_cov: 0.1
     b_acc_cov: 0.0001
     b_gyr_cov: 0.0001
-    fov_degree:    90
+    fov_degree:    120
     det_range:     300.0 # 原450
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic
     extrinsic_T: [ 0.04165, 0.02326, -0.0284 ]

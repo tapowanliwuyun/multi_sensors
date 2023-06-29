@@ -4,40 +4,53 @@
     <param name="add_keyframe_t" value="0.15" />   <!-- 0.15 -->
 
     <!-- The minimum distance (current point to existing points, unit in pixels) for inserting a new point to mesh (set 0 to disabled this constrain) -->
+    <!--    -->
+    <!--      将新点插入到网格的最小距离（当前点到现有点，单位为像素）（设置0可禁用此约束）  -->
     <param name="insert_pt_dis" value="0.0" />
     
     <!-- Exploits the free-space support in order to reconstruct weakly-represented surfaces, see paper to get more detail: 
     Jancosek, Michal, and Tomas Pajdla. "Exploiting visibility information in surface reconstruction to preserve weakly supported surfaces." -->
-    <param name="if_use_free_space_support" value="false" />
+    <!--  利用自由空间支持来重建弱表示曲面，请参阅论文以获得更多详细信息：  -->
+    <param name="if_use_free_space_support" value="true" />
     
     <!-- Multiplier adjusting the minimum thickness considered during visibility weighting -->
+    <!--  调整能见度加权过程中考虑的最小厚度的乘数  -->
     <param name="thickness_factor" value="1.0" />
     
     <!-- Multiplier adjusting the quality weight considered during graph-cut -->
+    <!--    -->
     <param name="quality_factor" value="0.0" />
     
     <!-- Decimation factor in range (0..1] to be applied to the reconstructed surface (set 1 to disabled) -->
+    <!--  要应用于重建曲面的范围（0..1]）内的抽取因子（将1设置为禁用）-->  -->
     <param name="decimate_mesh" value="1" />
 
     <!-- spurious factor for removing faces with too long edges or isolated components (set 0 to disabled) -->
-    <param name="if_remove_spurious" value="40.0" />
+    <!--   用于删除具有过长边或隔离组件的面的杂散因子（将0设置为禁用）,这个越小，有联系的边就越近，就会更精细 -->
+    <param name="if_remove_spurious" value="10.0" />
     
     <!-- The flag tp control the removal of spike faces -->
+    <!--  标志tp控制刺突面的移除  -->
     <param name="if_remove_spikes" value="true" />
     
     <!-- Try to close small holes (with size smaller the given value) in the reconstructed surface (0 - disabled) -->
-    <param name="close_holes_dist" value="20" />
+    <!--  尝试关闭重建曲面中的小孔（大小小于给定值）（0-禁用）  -->
+    <param name="close_holes_dist" value="10" />
 
     <!-- Factor for smoothing the reconstructed surface, the bigger the value, the smoother the mesh. -->
+    <!--  用于平滑重建曲面的因子，值越大，网格越平滑  -->
     <param name="smooth_mesh_factor" value="5" />
     
     <!-- The working directory, where we input the offline maps files and output the reconstructed mesh  -->
+    <!--    -->
     <param name="working_dir" value="$(env HOME)/r3live_output" />
     
     <!-- The factor of smoothing the texture of mesh -->
+    <!--  平滑网格纹理的因素  -->
     <param name="texturing_smooth_factor" value="10" />
     
     <!-- The name of the offline map files (with suffix *.r3live) -->
+    <!--    -->
     <param name="offline_map_name" value="test.r3live" />
 
     <!-- launch-prefix="gdb -ex run - -args" -->
