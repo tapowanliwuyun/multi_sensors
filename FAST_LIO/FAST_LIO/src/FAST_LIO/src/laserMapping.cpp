@@ -747,6 +747,26 @@ void h_share_model(state_ikfom &s, esekfom::dyn_share_datastruct<double> &ekfom_
     }
     solve_time += omp_get_wtime() - solve_start_;
 }
+bool CreateFile(std::ofstream& ofs, std::string file_path) {
+    ofs.open(file_path.c_str(), std::ios::app);
+    if (!ofs) {
+       std::cout << "无法生成文件: " << file_path << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool CreateDirectory(std::string directory_path) {
+    if (!boost::filesystem::is_directory(directory_path)) {
+        boost::filesystem::create_directory(directory_path);
+    }
+    if (!boost::filesystem::is_directory(directory_path)) {
+        std::cout << "无法建立文件夹: " << directory_path << std::endl;
+        return false;
+    }
+    return true;
+}
 
 int main(int argc, char** argv)
 {
@@ -788,6 +808,8 @@ int main(int argc, char** argv)
     nh.param<vector<double>>("mapping/extrinsic_R", extrinR, vector<double>());
     cout<<"p_pre->lidar_type "<<p_pre->lidar_type<<endl;
     
+    std::string WORK_SPACE_PATH = "/home/bupo/my_study/multi_sensors/FAST_LIO";
+
     path.header.stamp    = ros::Time::now();
     path.header.frame_id ="camera_init";
 
@@ -969,6 +991,42 @@ int main(int argc, char** argv)
             map_incremental();
             t5 = omp_get_wtime();
             
+            //Eigen::Matrix4d gnss_odometry_ = Eigen::Matrix4d::Identity();
+            Eigen::Matrix4d laser_odometry_ = Eigen::Matrix4d::Identity();
+            static std::ofstream ground_truth, laser_odom;
+            static bool is_file_created = false;
+            if(1)
+            {
+                laser_odometry_(0,3) = state_point.pos(0);
+                laser_odometry_(1,3) = state_point.pos(1);
+                laser_odometry_(2,3) = state_point.pos(2);
+
+                laser_odometry_.block<3,3>(0,0) = state_point.rot.matrix();
+
+                if (!is_file_created) 
+                {
+                    if (!CreateDirectory(WORK_SPACE_PATH + "/slam_data/trajectory"))
+                        return false;
+                    if (!CreateFile(ground_truth, WORK_SPACE_PATH + "/slam_data/trajectory/ground_truth.txt"))
+                        return false;
+                    if (!CreateFile(laser_odom, WORK_SPACE_PATH + "/slam_data/trajectory/laser_odom.txt"))
+                        return false;
+                    is_file_created = true;
+                }
+
+                for (int i = 0; i < 3; ++i) {
+                    for (int j = 0; j < 4; ++j) {
+                        laser_odom << laser_odometry_(i, j);
+                        if (i == 2 && j == 3) {
+                            laser_odom << std::endl;
+                        } else {
+                            laser_odom << " ";
+                        }
+                    }
+                }
+            }
+
+
             /******* Publish points *******/
             if (path_en)                         publish_path(pubPath);
             if (scan_pub_en || pcd_save_en)      publish_frame_world(pubLaserCloudFull);

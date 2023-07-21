@@ -412,7 +412,7 @@ void give_feature( pcl::PointCloud< PointType > &pl, vector< orgtype > &types, p
     PointType ap;
     for ( uint i = head; i < plsize2; i += g_LiDAR_sampling_point_step )
     {
-        if ( types[ i ].range > blind  && types[ i ].range < 500) // TODO_czy
+        if ( types[ i ].range > blind  )//&& types[ i ].range < 1000) // TODO_czy
         {
             ap.x = pl[ i ].x;
             ap.y = pl[ i ].y;

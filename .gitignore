@@ -18,6 +18,14 @@
 #FAST_LIO
 */*/build/
 */*/devel/
+*/my_data/
+*/slam_data/
+
+#fast_livo_ws
+*/*/build/
+*/*/devel/
+*/*/slam_data/
+
 
 #F_LOAM
 */build/
@@ -41,10 +49,20 @@
 */my_data/
 */.vscode/
 
+
+#LiLi-OM
+*/*/build/
+*/*/devel/
+*/slam_data/
+
 #lio_sam
 #lio_sam/
 */lio_sam/build/
 */lio_sam/devel/
+
+#Loam_livox
+*/build/
+*/devel/
 
 #loam_velodyne
 */build/
@@ -84,6 +102,11 @@
 */.vscode/
 
 #tictoc
+
+#Voxelmap
+*/*/build/
+*/*/devel/
+
 
 */*/*/build/
 */*/cmake-build-debug/
