@@ -2,13 +2,13 @@ Lidar_front_end:
    lidar_type: 1   # 1 for Livox-avia, 3 for Ouster-OS1-64
    N_SCANS: 6
    using_raw_point: 1
-   point_step: 1
+   point_step: 2
    
 r3live_common:
    if_dump_log: 0                   # If recording ESIKF update log. [default = 0]
    record_offline_map: 1            # If recording offline map. [default = 1]
    pub_pt_minimum_views: 3          # Publish points which have been render up to "pub_pt_minimum_views" time. [default = 3]
-   minimum_pts_size: 0.05           # The minimum distance for every two points in Global map (unit in meter). [default = 0.01] 
+   minimum_pts_size: 0.01           # The minimum distance for every two points in Global map (unit in meter). [default = 0.01] 
    image_downsample_ratio: 1        # The downsample ratio of the input image. [default = 1]
    estimate_i2c_extrinsic: 1        # If enable estimate the extrinsic between camera and IMU. [default = 1] 
    estimate_intrinsic: 1            # If enable estimate the online intrinsic calibration of the camera lens. [default = 1] 

@@ -107,6 +107,9 @@
 */*/build/
 */*/devel/
 
+#Voxelmap
+*/*/build/
+*/*/devel/
 
 */*/*/build/
 */*/cmake-build-debug/
