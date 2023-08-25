@@ -1,0 +1,27 @@
+<launch>
+  <param name="output_frame_id" value = "map" />           
+  <param name="pointCloud_pubTopic" value = "/handle_point" />
+  <param name="pcd_doc_path" value = "/home/bupo/my_study/read_pcd/my_data/scans.pcd" />
+  <param name="output_pcd_path" value = "/home/bupo/my_study/read_pcd/my_data/scans_xiugai.pcd" />
+
+  <param name="pass_x_min" value = "-100.0" />
+  <param name="pass_x_max" value = "100.0" />
+  <param name="pass_y_min" value = "-100.0" />
+  <param name="pass_y_max" value = "100.0" />
+  <param name="pass_z_min" value = "-1.0" />
+  <param name="pass_z_max" value = "30.0" />
+  <param name="voxel_size" value = "0.2" />
+  <param name="sor_nearby_number" value = "200" />
+  <param name="sor_thresh_value" value = "10.0" />
+  <param name="x_rotate_value" value = "0.0" />
+  <param name="y_rotate_value" value = "0.0" />
+  <param name="z_rotate_value" value = "0.0" />
+  <param name="x_trans_value" value = "0.0" />
+  <param name="y_trans_value" value = "20.0" />
+  <param name="z_trans_value" value = "0.0" />
+
+  <node pkg="read_pcd" name="read_pcd" type="read_pcd" output="screen" />
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find read_pcd)/rviz/read_pcd.rviz" />
+</launch>
+
+

@@ -69,6 +69,12 @@
 */devel/
 */.vscode/
 
+#pcd_chuli
+*/*/build/
+*/*/*/build/
+*/*/*/devel/
+
+
 #localization_in_auto_driving
 */*/build/
 */*/devel/
