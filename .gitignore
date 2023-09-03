@@ -19,12 +19,10 @@
 */*/build/
 */*/devel/
 */my_data/
-*/slam_data/
 
 #fast_livo_ws
 */*/build/
 */*/devel/
-*/*/slam_data/
 
 
 #F_LOAM
@@ -53,7 +51,6 @@
 #LiLi-OM
 */*/build/
 */*/devel/
-*/slam_data/
 
 #lio_sam
 #lio_sam/
